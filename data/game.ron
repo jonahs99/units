@@ -1,0 +1,27 @@
+(
+	resources: [
+		(
+			key: "substance",
+		),
+	],
+	units: [
+		(
+			key: "castle",
+			speed: 0.0,
+			attack: Some((
+				range: 200.0,	
+			)),
+		),
+		(
+			key: "worker",
+			spawn: Some((
+				from: "castle",
+				cost: [(50, "substance")],
+			)),
+			speed: 100.0,
+			attack: Some((
+				range: 100.0,	
+			)),
+		),
+	],
+)

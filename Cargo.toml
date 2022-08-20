@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 tokio = { version = "*", features = ["rt", "macros"] }
 warp = "*"
+ron = "0.8"
+serde = { version = "1", features = ["derive"] }
 
