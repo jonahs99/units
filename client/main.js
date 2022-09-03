@@ -1,68 +1,103 @@
 import { draw } from './draw.js'
+import { connect_to_server } from './server.js'
 
-function main() {
-    const canvas = document.createElement('canvas')
-    canvas.style.backgroundColor = '#aaa'
-    document.body.appendChild(canvas)
+const canvas = document.createElement('canvas')
+canvas.style.backgroundColor = '#aaa'
+document.body.appendChild(canvas)
 
-    const unitLength = 32
+async function main() {
+    const con = await connect_to_server('room')
 
-    const units = [
-        { type: "worker", x: 3, y: 6 },
-        { type: "castle", x: 6, y: 11 },
-        { type: "worker", x: 10, y: 15 },
-        { type: "worker", x: 15, y: 10 }
-    ]
+    let client
+    const state = {
+        cursorPosition: {},
+        grid: 32,
+        inputs: {},
+        selectionBoxStart: {},
+        selection: [],
+        units: []
+    }
 
-    const inputs = {}
-    const selectionBoxStart = {}
-    const cursorPosition = {}
+    con.on((msg) => {
+        const { Room, Update } = msg
+        if (Room) {
+            console.log(`We are client: ${Room.client_id} in room "${Room.room}"`)
+            client = Room.client_id
+        } else if (Update) {
+            //console.log('Last message:\n' + JSON.stringify(Update, null, '  '))
 
-    let selection = []
+            Update.unit_create.forEach(unit => {
+                state.units.push(unit)
+            })
+
+            Update.unit_change.forEach((unit, i) => {
+                state.units[i].pos = unit.pos
+                state.units[i].vel = unit.vel
+            })
+        }
+    })
+
+    function gameLoop() {
+        draw(canvas.getContext('2d'), state)
+
+        requestAnimationFrame(gameLoop)
+    }
+
+    requestAnimationFrame(gameLoop)
 
     canvas.addEventListener('mousemove', (event) => {
-        cursorPosition.x = event.clientX
-        cursorPosition.y = event.clientY
+        state.cursorPosition.x = event.clientX
+        state.cursorPosition.y = event.clientY
     })
 
     canvas.addEventListener('mousedown', (event) => {
         if (event.button === 0) { // left mouse button
-            inputs.leftMouseButton = true
-            selectionBoxStart.x = event.x
-            selectionBoxStart.y = event.y
+            state.inputs.leftMouseButton = true
+            state.selectionBoxStart.x = event.x
+            state.selectionBoxStart.y = event.y
         }
         else if (event.button === 2) { // right mouse button
-            console.log('right click down')
+            const target = screenToWorld(event, state.grid)
+            const cmds = []
+            state.selection.forEach((unit) => {
+                cmds.push({ id: state.units.indexOf(unit), target })
+            })
+
+            con.send({
+                Commands: cmds
+            })
         }
     })
 
     canvas.addEventListener('mouseup', (event) => {
         if (event.button === 0) {
-            inputs.leftMouseButton = false
-            const x1 = Math.min(selectionBoxStart.x, cursorPosition.x) / unitLength
-            const x2 = Math.max(selectionBoxStart.x, cursorPosition.x) / unitLength
-            const y1 = Math.min(selectionBoxStart.y, cursorPosition.y) / unitLength
-            const y2 = Math.max(selectionBoxStart.y, cursorPosition.y) / unitLength
-            selection = []
-            units.forEach(unit => {
-                if (x1 <= unit.x && unit.x <= x2 && y1 <= unit.y && unit.y <= y2) {
-                    selection.push(unit)
+            state.inputs.leftMouseButton = false
+
+            const start = screenToWorld(state.selectionBoxStart, state.grid)
+            const end = screenToWorld(state.cursorPosition, state.grid)
+
+            const x1 = Math.min(start.x, end.x)
+            const x2 = Math.max(start.x, end.x)
+            const y1 = Math.min(start.y, end.y)
+            const y2 = Math.max(start.y, end.y)
+
+            state.selection = []
+            state.units.forEach(unit => {
+                if (x1 <= unit.pos.x && unit.pos.x <= x2 && y1 <= unit.pos.y && unit.pos.y <= y2) {
+                    state.selection.push(unit)
                 }
             })
         }
     })
 
     canvas.addEventListener('contextmenu', (event) => { event.preventDefault() })
+}
 
-    function gameLoop() {
-
-
-        draw(canvas.getContext('2d'), unitLength, units, selection, inputs, selectionBoxStart, cursorPosition)
-
-        requestAnimationFrame(gameLoop)
+function screenToWorld(pos, grid) {
+    return {
+        x: (pos.x - canvas.width / 2) / grid,
+        y: (pos.y - canvas.height / 2) / grid
     }
-
-    requestAnimationFrame(gameLoop)
 }
 
 main()

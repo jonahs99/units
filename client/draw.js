@@ -1,39 +1,52 @@
-export function draw(ctx, unitLength, units, selection, inputs, selectionBoxStart, cursorPosition) {
+export function draw(ctx, state) {
     const canvas = ctx.canvas
+    const { cursorPosition, grid, inputs, selectionBoxStart, selection, units } = state
 
     resizeCanvasToDisplaySize(canvas)
 
     ctx.resetTransform()
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.scale(unitLength, unitLength)
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.scale(grid, grid)
 
     // Draw the grid dots
     ctx.fillStyle = '#888'
-    for (let x = 0; x < canvas.width / unitLength; x += 1) {
-        for (let y = 0; y < canvas.height / unitLength; y += 1) {
+    for (let x = -canvas.width / (grid * 2); x < canvas.width / (grid * 2); x += 1) {
+        for (let y = -canvas.height / (grid * 2); y < canvas.height / (grid * 2); y += 1) {
             ctx.beginPath()
             ctx.arc(x, y, 0.05, 0, 2 * Math.PI)
             ctx.fill()
         }
     }
 
+    const teamColors = [
+        {
+            stroke: '#f7594a',
+            fill: '#f7594ac0'
+        },
+        {
+            stroke: '#528df2',
+            fill: '#528df2c0'
+        }
+    ]
+
     // Draw units
     units.forEach(unit => {
-        if (unit.type === "worker") {
+        if (unit.ty === 1) {
             ctx.lineWidth = 0.1
-            ctx.strokeStyle = '#528df2'
-            ctx.fillStyle = '#528df2c0'
+            ctx.strokeStyle = teamColors[unit.client].stroke
+            ctx.fillStyle = teamColors[unit.client].fill
             ctx.beginPath()
-            ctx.arc(unit.x, unit.y, 0.5, 0, 2 * Math.PI)
+            ctx.arc(unit.pos.x, unit.pos.y, 0.5, 0, 2 * Math.PI)
             ctx.fill()
             ctx.stroke()
         }
-        else if (unit.type === "castle") {
+        else if (unit.ty === 0) {
             ctx.lineWidth = 0.1
-            ctx.strokeStyle = '#f7594a'
-            ctx.fillStyle = '#f7594ac0'
+            ctx.strokeStyle = teamColors[unit.client].stroke
+            ctx.fillStyle = teamColors[unit.client].fill
             ctx.beginPath()
-            ctx.roundRect(unit.x - 2, unit.y - 2, 4, 4, 0.3)
+            ctx.roundRect(unit.pos.x - 2, unit.pos.y - 2, 4, 4, 0.3)
             ctx.fill()
             ctx.stroke()
         }
@@ -43,7 +56,7 @@ export function draw(ctx, unitLength, units, selection, inputs, selectionBoxStar
     selection.forEach(unit => {
         ctx.fillStyle = '#fff'
         ctx.beginPath()
-        ctx.arc(unit.x, unit.y, 0.075, 0, 2 * Math.PI)
+        ctx.arc(unit.pos.x, unit.pos.y, 0.075, 0, 2 * Math.PI)
         ctx.fill()
     })
 
