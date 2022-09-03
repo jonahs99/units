@@ -1,11 +1,10 @@
-use serde::{Deserialize, Serialize};
 use crate::game_desc::GameDesc;
 use crate::math::Vec2;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct Game {
     units: Vec<Unit>,
-    first_msg_sent: bool,
 }
 
 #[derive(Debug)]
@@ -75,10 +74,7 @@ impl Game {
             }
         }
 
-        Self {
-            units,
-            first_msg_sent: false,
-        }
+        Self { units }
     }
 
     pub fn process_inputs(&mut self, inputs: &[(usize, ClientMsg)]) {
@@ -100,29 +96,35 @@ impl Game {
         }
     }
 
+    pub fn catchup_msg(&self) -> ServerMsg {
+        let unit_create = self
+            .units
+            .iter()
+            .map(|u| UnitCreateMsg {
+                client: u.client,
+                ty: u.ty,
+            })
+            .collect();
+        ServerMsg::Update(UpdateMsg {
+            unit_create,
+            unit_change: self.unit_change(),
+        })
+    }
+
     pub fn tick(&mut self) -> ServerMsg {
-        let unit_create = if self.first_msg_sent {
-            vec![]
-        } else {
-            self.units.iter()
-                .map(|u| UnitCreateMsg {
-                    client: u.client,
-                    ty: u.ty,
-                })
-                .collect()
-        };
-        let unit_change = self.units.iter()
+        ServerMsg::Update(UpdateMsg {
+            unit_create: vec![],
+            unit_change: self.unit_change(),
+        })
+    }
+
+    fn unit_change(&self) -> Vec<UnitChangeMsg> {
+        self.units
+            .iter()
             .map(|u| UnitChangeMsg {
                 pos: u.pos,
                 vel: u.vel,
             })
-            .collect();
-        let msg = UpdateMsg {
-            unit_create,
-            unit_change,
-        };
-        self.first_msg_sent = true;
-        ServerMsg::Update(msg)
+            .collect()
     }
 }
-

@@ -3,11 +3,11 @@ use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::fs;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::time;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-use std::time::Duration;
-use tokio::time;
 
 pub mod math;
 
@@ -16,7 +16,7 @@ use game_desc::GameDesc;
 
 mod game;
 use game::Game;
-use game::{ClientMsg, ServerMsg, RoomMsg};
+use game::{ClientMsg, RoomMsg, ServerMsg};
 
 #[derive(Debug)]
 enum RouteCmd {
@@ -30,10 +30,10 @@ enum RouteCmd {
     Close,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 struct Room {
-    game: Option<Game>,
-    clients: Vec<usize>,
+    game: Game,
+    clients: HashMap<usize, usize>, // player index -> client id
     pending_inputs: Vec<(usize, ClientMsg)>,
 }
 
@@ -76,52 +76,76 @@ async fn main() {
 
         while let Ok((id, cmd)) = rx.try_recv() {
             match cmd {
-                RouteCmd::Open { mut send, room: room_id } => {
+                RouteCmd::Open {
+                    mut send,
+                    room: room_id,
+                } => {
+                    let room = rooms.entry(room_id.clone()).or_insert_with(|| Room {
+                        game: Game::new(desc.clone()),
+                        clients: Default::default(),
+                        pending_inputs: Default::default(),
+                    });
+                    room_lookup.insert(id, room_id.clone());
+
+                    // Assign a player index
+                    let mut player_id = 0;
+                    loop {
+                        if !room.clients.values().any(|p| *p == player_id) {
+                            room.clients.insert(id, player_id);
+                            break;
+                        }
+                        player_id += 1;
+                    }
+
                     let open_msg = ServerMsg::Room(RoomMsg {
-                        client_id: id,
-                        room: room_id.clone(),
+                        client_id: player_id,
+                        room: room_id,
                     });
                     let open_msg = Message::text(serde_json::to_string(&open_msg).unwrap());
                     send.send(open_msg).await.unwrap();
 
+                    let catchup_msg = room.game.catchup_msg();
+                    let catchup_msg = Message::text(serde_json::to_string(&catchup_msg).unwrap());
+                    send.send(catchup_msg).await.unwrap();
+
                     sockets.insert(id, send);
-                    let room = rooms.entry(room_id.clone()).or_insert(Room::default());
-                    room.clients.push(id);
-                    room_lookup.insert(id, room_id);
-                    if room.clients.len() == 2 {
-                        room.game = Some(Game::new(desc.clone()));
-                    }
                 }
                 RouteCmd::Message { msg } => {
                     if let Some(room) = room_lookup.get(&id) {
                         if let Some(room) = rooms.get_mut(room) {
-                            if let Ok(text) = msg.to_str() {
-                                if let Ok(msg) = serde_json::from_str(&text) {
-                                    room.pending_inputs.push((id, msg));
-                                } else {
-                                    println!("Bad client message: {}", text);
+                            if let Some(&player_id) = room.clients.get(&id) {
+                                if let Ok(text) = msg.to_str() {
+                                    if let Ok(msg) = serde_json::from_str(&text) {
+                                        room.pending_inputs.push((player_id, msg));
+                                    } else {
+                                        println!("Bad client message: {}", text);
+                                    }
                                 }
                             }
                         }
                     }
                 }
                 RouteCmd::Close => {
+                    if let Some(room) = room_lookup.get(&id) {
+                        if let Some(room) = rooms.get_mut(room) {
+                            room.clients.remove(&id);
+                        }
+                    }
+                    room_lookup.remove(&id);
                     sockets.remove(&id);
                 }
             }
         }
 
         for room in rooms.values_mut() {
-            if let Some(game) = &mut room.game {
-                game.process_inputs(&room.pending_inputs);
-                room.pending_inputs.clear();
-                let server_msg = game.tick();
-                let text = serde_json::to_string(&server_msg).expect("Failed to serialize message");
-                let msg = Message::text(text);
-                for client in &room.clients {
-                    if let Some(socket) = sockets.get_mut(client) {
-                        socket.send(msg.clone()).await.unwrap();
-                    }
+            room.game.process_inputs(&room.pending_inputs);
+            room.pending_inputs.clear();
+            let server_msg = room.game.tick();
+            let text = serde_json::to_string(&server_msg).expect("Failed to serialize message");
+            let msg = Message::text(text);
+            for client in room.clients.keys() {
+                if let Some(socket) = sockets.get_mut(client) {
+                    socket.send(msg.clone()).await.unwrap();
                 }
             }
         }
@@ -134,7 +158,11 @@ fn load_game_desc() -> GameDesc {
     ron::from_str(&desc).expect("Could not parse game description file")
 }
 
-async fn client_connected(ws: WebSocket, tx: mpsc::UnboundedSender<(usize, RouteCmd)>, room: String) {
+async fn client_connected(
+    ws: WebSocket,
+    tx: mpsc::UnboundedSender<(usize, RouteCmd)>,
+    room: String,
+) {
     let id = NEXT_CLIENT_ID.fetch_add(1, Ordering::Relaxed);
 
     let (ws_tx, mut ws_rx) = ws.split();
