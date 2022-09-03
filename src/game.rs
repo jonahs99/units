@@ -130,7 +130,7 @@ impl Game {
             let stop_dist = speed * speed / acc * 0.75;
 
             let a = match unit.state {
-                UnitState::Idle => -unit.vel,
+                UnitState::Idle => unit.vel * -10.,
                 UnitState::Move(target) => {
                     let d = target - unit.pos;
                     let m = d.magnitude();
@@ -148,6 +148,27 @@ impl Game {
             };
 
             unit.vel += truncate(a, acc) * dt;
+        }
+
+        for i in 0..self.units.len() {
+            for j in 0..self.units.len() {
+                if i == j { continue; }
+
+                let u = &self.units[i];
+                let u_size = self.desc.units[u.ty].size;
+
+                let v = &self.units[j];
+                let v_size = self.desc.units[v.ty].size;
+
+                let d = v.pos - u.pos;
+                let m = d.magnitude();
+
+                let r0 = (u_size + v_size) / 2.;
+                if m < r0 {
+                    let v = &mut self.units[j];
+                    v.vel += d / m * (r0 - m) * 10.;
+                }
+            }
         }
 
         for unit in &mut self.units {

@@ -9,7 +9,7 @@
 		(
 			key: "castle",
 			speed: 0.0,
-			acc: 0.0,
+			acc: 100.0,
 			size: 2.,
 			attack: Some((
 				range: 6.0,	
@@ -36,6 +36,8 @@
 				(key: "worker", pos: (x: -12., y: -2.)),
 				(key: "worker", pos: (x: -12., y: 0.)),
 				(key: "worker", pos: (x: -12., y: 2.)),
+				(key: "worker", pos: (x: -14., y: 2.)),
+				(key: "worker", pos: (x: -14., y: -2.)),
 			],
 		),
 		(
@@ -44,6 +46,8 @@
 				(key: "worker", pos: (x: 12., y: -2.)),
 				(key: "worker", pos: (x: 12., y: 0.)),
 				(key: "worker", pos: (x: 12., y: 2.)),
+				(key: "worker", pos: (x: 14., y: 2.)),
+				(key: "worker", pos: (x: 14., y: -2.)),
 			],
 		),
 	],
