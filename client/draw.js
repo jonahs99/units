@@ -1,6 +1,6 @@
 export function draw(ctx, state) {
     const canvas = ctx.canvas
-    const { camera, cursorPosition, grid, inputs, selectionBoxStart, selection, units } = state
+    const { camera, cursorPosition, grid, inputs, isPointerLocked, selectionBoxStart, selection, units } = state
 
     resizeCanvasToDisplaySize(canvas)
 
@@ -31,6 +31,7 @@ export function draw(ctx, state) {
     units.forEach(unit => {
         ctx.save()
         ctx.translate(unit.pos.x, unit.pos.y)
+        ctx.rotate(Math.atan2(unit.vel.y, unit.vel.x) + Math.PI / 2)
 
         if (unit.ty === 0) {
             drawCastle(ctx, teamColors[unit.client])
@@ -62,13 +63,15 @@ export function draw(ctx, state) {
     }
 
     // Draw cursor
-    ctx.lineWidth = 1
-    ctx.strokeStyle = '#000'
-    ctx.fillStyle = '#fff'
-    ctx.beginPath()
-    ctx.arc(cursorPosition.x, cursorPosition.y, 5, 0, 2 * Math.PI)
-    ctx.fill()
-    ctx.stroke()
+    if (isPointerLocked) {
+        ctx.lineWidth = 1
+        ctx.strokeStyle = '#000'
+        ctx.fillStyle = '#fff'
+        ctx.beginPath()
+        ctx.arc(cursorPosition.x, cursorPosition.y, 5, 0, 2 * Math.PI)
+        ctx.fill()
+        ctx.stroke()
+    }
 }
 
 function drawCastle(ctx, colors) {

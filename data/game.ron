@@ -10,6 +10,7 @@
 			key: "castle",
 			speed: 0.0,
 			acc: 0.0,
+			size: 2.,
 			attack: Some((
 				range: 6.0,	
 			)),
@@ -21,7 +22,8 @@
 				cost: [(50, "substance")],
 			)),
 			speed: 10.0,
-			acc: 60.0,
+			acc: 100.0,
+			size: 1.,
 			attack: Some((
 				range: 4.0,	
 			)),
@@ -30,7 +32,7 @@
 	player_spawns: [
 		(
 			units: [
-				(key: "castle", pos: (x: -16., y: 0.)),
+				(key: "castle", pos: (x: -14., y: 0.)),
 				(key: "worker", pos: (x: -12., y: -2.)),
 				(key: "worker", pos: (x: -12., y: 0.)),
 				(key: "worker", pos: (x: -12., y: 2.)),
@@ -38,7 +40,7 @@
 		),
 		(
 			units: [
-				(key: "castle", pos: (x: 16., y: 0.)),
+				(key: "castle", pos: (x: 14., y: 0.)),
 				(key: "worker", pos: (x: 12., y: -2.)),
 				(key: "worker", pos: (x: 12., y: 0.)),
 				(key: "worker", pos: (x: 12., y: 2.)),

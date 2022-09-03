@@ -73,11 +73,14 @@ async function main() {
 
             state.cursorPosition.x = Math.min(Math.max(state.cursorPosition.x, 0), canvas.width)
             state.cursorPosition.y = Math.min(Math.max(state.cursorPosition.y, 0), canvas.height)
+        } else {
+            state.cursorPosition.x = event.x
+            state.cursorPosition.y = event.y
         }
     })
 
     canvas.addEventListener('mousedown', (event) => {
-        if (!state.isPointerLocked) {
+        if (!state.isPointerLocked && !localStorage.getItem('nopointerlock')) {
             canvas.requestPointerLock()
             state.cursorPosition.x = event.clientX
             state.cursorPosition.y = event.clientY

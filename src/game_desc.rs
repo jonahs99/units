@@ -20,6 +20,7 @@ pub struct UnitDesc {
     pub spawn: Option<SpawnDesc>,
     pub speed: f32,
     pub acc: f32,
+    pub size: f32,
     pub attack: Option<AttackDesc>,
 }
 
