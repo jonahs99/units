@@ -10,9 +10,11 @@ async function main() {
 
     let client
     const state = {
+        camera: { x: 0, y: 0 },
         cursorPosition: {},
         grid: 32,
         inputs: {},
+        isPointerLocked: false,
         selectionBoxStart: {},
         selection: [],
         units: []
@@ -38,6 +40,19 @@ async function main() {
     })
 
     function gameLoop() {
+        if (state.cursorPosition.x === 0) {
+            state.camera.x += 3
+        }
+        if (state.cursorPosition.x === canvas.width) {
+            state.camera.x -= 3
+        }
+        if (state.cursorPosition.y === 0) {
+            state.camera.y += 3
+        }
+        if (state.cursorPosition.y === canvas.height) {
+            state.camera.y -= 3
+        }
+
         draw(canvas.getContext('2d'), state)
 
         requestAnimationFrame(gameLoop)
@@ -46,18 +61,30 @@ async function main() {
     requestAnimationFrame(gameLoop)
 
     canvas.addEventListener('mousemove', (event) => {
-        state.cursorPosition.x = event.clientX
-        state.cursorPosition.y = event.clientY
+        if (state.isPointerLocked) {
+            state.cursorPosition.x += event.movementX
+            state.cursorPosition.y += event.movementY
+
+            state.cursorPosition.x = Math.min(Math.max(state.cursorPosition.x, 0), canvas.width)
+            state.cursorPosition.y = Math.min(Math.max(state.cursorPosition.y, 0), canvas.height)
+        }
     })
 
     canvas.addEventListener('mousedown', (event) => {
+        if (!state.isPointerLocked) {
+            canvas.requestPointerLock()
+            state.cursorPosition.x = event.clientX
+            state.cursorPosition.y = event.clientY
+            return
+        }
+
         if (event.button === 0) { // left mouse button
             state.inputs.leftMouseButton = true
-            state.selectionBoxStart.x = event.x
-            state.selectionBoxStart.y = event.y
+            state.selectionBoxStart.x = state.cursorPosition.x
+            state.selectionBoxStart.y = state.cursorPosition.y
         }
         else if (event.button === 2) { // right mouse button
-            const target = screenToWorld(event, state.grid)
+            const target = screenToWorld(state.cursorPosition, state.camera, state.grid)
             const cmds = []
             state.selection.forEach((unit) => {
                 cmds.push({ id: state.units.indexOf(unit), target })
@@ -73,8 +100,8 @@ async function main() {
         if (event.button === 0) {
             state.inputs.leftMouseButton = false
 
-            const start = screenToWorld(state.selectionBoxStart, state.grid)
-            const end = screenToWorld(state.cursorPosition, state.grid)
+            const start = screenToWorld(state.selectionBoxStart, state.camera, state.grid)
+            const end = screenToWorld(state.cursorPosition, state.camera, state.grid)
 
             const x1 = Math.min(start.x, end.x)
             const x2 = Math.max(start.x, end.x)
@@ -91,12 +118,16 @@ async function main() {
     })
 
     canvas.addEventListener('contextmenu', (event) => { event.preventDefault() })
+
+    document.addEventListener('pointerlockchange', () => {
+        state.isPointerLocked = (document.pointerLockElement === canvas)
+    })
 }
 
-function screenToWorld(pos, grid) {
+function screenToWorld(pos, camera, grid) {
     return {
-        x: (pos.x - canvas.width / 2) / grid,
-        y: (pos.y - canvas.height / 2) / grid
+        x: (-camera.x + pos.x - canvas.width / 2) / grid,
+        y: (-camera.y + pos.y - canvas.height / 2) / grid
     }
 }
 
