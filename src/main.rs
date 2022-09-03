@@ -62,7 +62,7 @@ async fn main() {
     let routes = warp::get().and(room_route.or(desc_route).or(client_route));
 
     // Web server task
-    tokio::spawn(warp::serve(routes).run(([127, 0, 0, 1], 8000)));
+    tokio::spawn(warp::serve(routes).run(([0, 0, 0, 0], 8000)));
 
     // Main loop
     let mut sockets = HashMap::new();
