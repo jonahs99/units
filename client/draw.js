@@ -23,39 +23,23 @@ export function draw(ctx, state) {
     }
 
     const teamColors = [
-        {
-            stroke: '#f7594a',
-            fill: '#f7594ac0'
-        },
-        {
-            stroke: '#528df2',
-            fill: '#528df2c0'
-        }
+        ['#f7594a', '#f7594a'],
+        ['#528df2', '#528df2']
     ]
 
     // Draw units
     units.forEach(unit => {
-        if (unit.ty === 1) {
-            ctx.lineWidth = 0.1
-            ctx.strokeStyle = '#ffffffd0'
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = teamColors[unit.client].stroke
-            ctx.beginPath()
-            ctx.arc(unit.pos.x, unit.pos.y, 0.5, 0, 2 * Math.PI)
-            ctx.stroke()
-        }
-        else if (unit.ty === 0) {
-            ctx.lineWidth = 0.1
-            ctx.strokeStyle = '#ffffffd0'
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = teamColors[unit.client].stroke
-            ctx.beginPath()
-            ctx.roundRect(unit.pos.x - 1, unit.pos.y - 1, 2, 2, 0.3)
-            ctx.stroke()
-        }
-    })
+        ctx.save()
+        ctx.translate(unit.pos.x, unit.pos.y)
 
-    ctx.shadowColor = "transparent"
+        if (unit.ty === 0) {
+            drawCastle(ctx, teamColors[unit.client])
+        }
+        else if (unit.ty === 1) {
+            drawWorker(ctx, teamColors[unit.client])
+        }
+        ctx.restore()
+    })
 
     // Draw selected unit indicators
     selection.forEach(unit => {
@@ -84,6 +68,52 @@ export function draw(ctx, state) {
     ctx.beginPath()
     ctx.arc(cursorPosition.x, cursorPosition.y, 5, 0, 2 * Math.PI)
     ctx.fill()
+    ctx.stroke()
+}
+
+function drawCastle(ctx, colors) {
+    ctx.lineWidth = 0.2
+    ctx.strokeStyle = colors[0]
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = colors[1]
+    ctx.beginPath()
+    ctx.roundRect(-1, -1, 2, 2, 0.2)
+    ctx.stroke()
+
+    ctx.lineWidth = 0.1
+    ctx.strokeStyle = '#ffffff'
+    ctx.shadowColor = "transparent"
+    ctx.beginPath()
+    ctx.roundRect(-1, -1, 2, 2, 0.2)
+    ctx.stroke()
+}
+
+function drawWorker(ctx, colors) {
+    ctx.lineJoin = 'round'
+
+    ctx.lineWidth = 0.2
+    ctx.strokeStyle = colors[0]
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = colors[1]
+    ctx.beginPath()
+    ctx.moveTo(-0.3, 0.3)
+    ctx.lineTo(-0.5, -0.3)
+    ctx.lineTo(0, -0.2)
+    ctx.lineTo(0.5, -0.3)
+    ctx.lineTo(0.3, 0.3)
+    ctx.closePath()
+    ctx.stroke()
+
+    ctx.lineWidth = 0.1
+    ctx.strokeStyle = '#ffffff'
+    ctx.shadowColor = "transparent"
+    ctx.beginPath()
+    ctx.moveTo(-0.3, 0.3)
+    ctx.lineTo(-0.5, -0.3)
+    ctx.lineTo(0, -0.2)
+    ctx.lineTo(0.5, -0.3)
+    ctx.lineTo(0.3, 0.3)
+    ctx.closePath()
     ctx.stroke()
 }
 

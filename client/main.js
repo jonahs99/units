@@ -62,6 +62,12 @@ async function main() {
 
     canvas.addEventListener('mousemove', (event) => {
         if (state.isPointerLocked) {
+            if (state.inputs.middleMouseButton) {
+                state.camera.x -= event.movementX
+                state.camera.y -= event.movementY
+                return
+            }
+
             state.cursorPosition.x += event.movementX
             state.cursorPosition.y += event.movementY
 
@@ -83,6 +89,9 @@ async function main() {
             state.selectionBoxStart.x = state.cursorPosition.x
             state.selectionBoxStart.y = state.cursorPosition.y
         }
+        else if (event.button === 1) { // middle mouse button
+            state.inputs.middleMouseButton = true
+        }
         else if (event.button === 2) { // right mouse button
             const target = screenToWorld(state.cursorPosition, state.camera, state.grid)
             const cmds = []
@@ -97,7 +106,7 @@ async function main() {
     })
 
     canvas.addEventListener('mouseup', (event) => {
-        if (event.button === 0) {
+        if (event.button === 0) { // left mouse button
             state.inputs.leftMouseButton = false
 
             const start = screenToWorld(state.selectionBoxStart, state.camera, state.grid)
@@ -115,6 +124,13 @@ async function main() {
                 }
             })
         }
+        else if (event.button === 1) { // middle mouse button
+            state.inputs.middleMouseButton = false
+        }
+    })
+
+    canvas.addEventListener('wheel', (event) => {
+        state.grid -= event.deltaY * 0.04
     })
 
     canvas.addEventListener('contextmenu', (event) => { event.preventDefault() })
