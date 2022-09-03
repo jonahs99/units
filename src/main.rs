@@ -69,7 +69,7 @@ async fn main() {
     let mut rooms = HashMap::new();
     let mut room_lookup = HashMap::new(); // user -> room
 
-    let mut interval = time::interval(Duration::from_millis(50));
+    let mut interval = time::interval(Duration::from_millis((1000. * desc.dt) as u64));
 
     loop {
         interval.tick().await;

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameDesc {
+    pub dt: f32,
     pub resources: Vec<ResourceDesc>,
     pub units: Vec<UnitDesc>,
     pub player_spawns: Vec<PlayerSpawnDesc>,
@@ -18,6 +19,7 @@ pub struct UnitDesc {
     pub key: String,
     pub spawn: Option<SpawnDesc>,
     pub speed: f32,
+    pub acc: f32,
     pub attack: Option<AttackDesc>,
 }
 

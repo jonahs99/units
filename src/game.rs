@@ -1,18 +1,27 @@
 use crate::game_desc::GameDesc;
-use crate::math::Vec2;
+use crate::math::{truncate, Vec2};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct Game {
+    desc: GameDesc,
     units: Vec<Unit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Unit {
     client: usize,
     ty: usize,
     pos: Vec2,
     vel: Vec2,
+    state: UnitState,
+}
+
+#[derive(Debug, Default)]
+enum UnitState {
+    #[default]
+    Idle,
+    Move(Vec2),
 }
 
 // Message Types
@@ -69,12 +78,12 @@ impl Game {
                     client,
                     ty,
                     pos: unit.pos,
-                    vel: (0., 0.).into(),
+                    ..Default::default()
                 });
             }
         }
 
-        Self { units }
+        Self { desc, units }
     }
 
     pub fn process_inputs(&mut self, inputs: &[(usize, ClientMsg)]) {
@@ -87,7 +96,7 @@ impl Game {
                                 continue;
                             }
                             if let Some(target) = cmd.target {
-                                unit.pos = target;
+                                unit.state = UnitState::Move(target);
                             }
                         }
                     }
@@ -112,6 +121,39 @@ impl Game {
     }
 
     pub fn tick(&mut self) -> ServerMsg {
+        let dt = self.desc.dt;
+
+        for unit in &mut self.units {
+            let speed = self.desc.units[unit.ty].speed;
+            let acc = self.desc.units[unit.ty].acc;
+
+            let stop_dist = speed * speed / acc * 0.75;
+
+            let a = match unit.state {
+                UnitState::Idle => -unit.vel,
+                UnitState::Move(target) => {
+                    let d = target - unit.pos;
+                    let m = d.magnitude();
+
+                    if m < 0.001 {
+                        unit.state = UnitState::Idle;
+                        Vec2::zero()
+                    } else {
+                        let speed_want = (speed * m / stop_dist).min(speed);
+                        let v_want = d / m * speed_want;
+                        let steer = (v_want - unit.vel) / dt;
+                        steer
+                    }
+                }
+            };
+
+            unit.vel += truncate(a, acc) * dt;
+        }
+
+        for unit in &mut self.units {
+            unit.pos += unit.vel * dt;
+        }
+
         ServerMsg::Update(UpdateMsg {
             unit_create: vec![],
             unit_change: self.unit_change(),
