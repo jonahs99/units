@@ -1,18 +1,21 @@
 export function draw(ctx, state) {
     const canvas = ctx.canvas
-    const { cursorPosition, grid, inputs, selectionBoxStart, selection, units } = state
+    const { camera, cursorPosition, grid, inputs, selectionBoxStart, selection, units } = state
 
     resizeCanvasToDisplaySize(canvas)
 
     ctx.resetTransform()
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.translate(camera.x + canvas.width / 2, camera.y + canvas.height / 2)
     ctx.scale(grid, grid)
 
     // Draw the grid dots
-    ctx.fillStyle = '#888'
-    for (let x = -canvas.width / (grid * 2); x < canvas.width / (grid * 2); x += 1) {
-        for (let y = -canvas.height / (grid * 2); y < canvas.height / (grid * 2); y += 1) {
+    for (let x = -20; x < 20; x += 1) {
+        for (let y = -20; y < 20; y += 1) {
+            ctx.fillStyle = '#888'
+            if (x == 0 || y == 0) {
+                ctx.fillStyle = '#777'
+            }
             ctx.beginPath()
             ctx.arc(x, y, 0.05, 0, 2 * Math.PI)
             ctx.fill()
@@ -34,23 +37,25 @@ export function draw(ctx, state) {
     units.forEach(unit => {
         if (unit.ty === 1) {
             ctx.lineWidth = 0.1
-            ctx.strokeStyle = teamColors[unit.client].stroke
-            ctx.fillStyle = teamColors[unit.client].fill
+            ctx.strokeStyle = '#ffffffd0'
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = teamColors[unit.client].stroke
             ctx.beginPath()
             ctx.arc(unit.pos.x, unit.pos.y, 0.5, 0, 2 * Math.PI)
-            ctx.fill()
             ctx.stroke()
         }
         else if (unit.ty === 0) {
             ctx.lineWidth = 0.1
-            ctx.strokeStyle = teamColors[unit.client].stroke
-            ctx.fillStyle = teamColors[unit.client].fill
+            ctx.strokeStyle = '#ffffffd0'
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = teamColors[unit.client].stroke
             ctx.beginPath()
-            ctx.roundRect(unit.pos.x - 2, unit.pos.y - 2, 4, 4, 0.3)
-            ctx.fill()
+            ctx.roundRect(unit.pos.x - 1, unit.pos.y - 1, 2, 2, 0.3)
             ctx.stroke()
         }
     })
+
+    ctx.shadowColor = "transparent"
 
     // Draw selected unit indicators
     selection.forEach(unit => {
@@ -71,6 +76,15 @@ export function draw(ctx, state) {
         ctx.fill()
         ctx.stroke()
     }
+
+    // Draw cursor
+    ctx.lineWidth = 1
+    ctx.strokeStyle = '#000'
+    ctx.fillStyle = '#fff'
+    ctx.beginPath()
+    ctx.arc(cursorPosition.x, cursorPosition.y, 5, 0, 2 * Math.PI)
+    ctx.fill()
+    ctx.stroke()
 }
 
 function resizeCanvasToDisplaySize(canvas, multiplier) {
