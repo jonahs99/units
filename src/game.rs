@@ -88,7 +88,7 @@ impl Game {
                     for cmd in cmds {
                         if let Some(unit) = self.units.get_mut(cmd.id) {
                             if unit.client != *client {
-                                break;
+                                continue;
                             }
                             if let Some(target) = cmd.target {
                                 unit.pos = target;
