@@ -24,4 +24,20 @@
 			)),
 		),
 	],
+	player_spawns: [
+		(
+			units: [
+				(key: "castle", pos: (x: -12., y: 0.)),
+				(key: "worker", pos: (x: -12., y: -2.)),
+				(key: "worker", pos: (x: -12., y: 2.)),
+			],
+		),
+		(
+			units: [
+				(key: "castle", pos: (x: 12., y: 0.)),
+				(key: "worker", pos: (x: 12., y: -2.)),
+				(key: "worker", pos: (x: 12., y: 2.)),
+			],
+		),
+	],
 )
