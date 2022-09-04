@@ -21,6 +21,7 @@ pub struct UnitDesc {
     pub speed: f32,
     pub acc: f32,
     pub size: f32,
+    pub hp: f32,
     pub attack: Option<AttackDesc>,
 }
 
@@ -33,6 +34,8 @@ pub struct SpawnDesc {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AttackDesc {
     pub range: f32,
+    pub damage: f32,
+    pub delay: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
