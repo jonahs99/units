@@ -18,6 +18,7 @@ async function main() {
     const state = {
         camera: { x: 0, y: 0 },
         cursorPosition: {},
+        damage: [],
         grid: 32,
         inputs: {},
         isPointerLocked: false,
@@ -34,6 +35,9 @@ async function main() {
         } else if (Update) {
             lastTickTime = performance.now()
 
+            state.units = state.units.filter(unit => !unit.dead)
+            state.selection = state.selection.filter(unit => !unit.dead)
+
             Update.unit_create.forEach(unit => {
                 state.units.push(unit)
             })
@@ -42,9 +46,10 @@ async function main() {
                 state.units[i].pos = unit.pos
                 state.units[i].disp = unit.disp
                 state.units[i].dead = unit.dead
+                state.units[i].hp = unit.hp
             })
 
-            state.units = state.units.filter(unit => !unit.dead)
+            state.damage = Update.damage
         }
     })
 

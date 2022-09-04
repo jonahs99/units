@@ -1,6 +1,6 @@
 export function draw(ctx, state, desc) {
     const canvas = ctx.canvas
-    const { camera, cursorPosition, grid, inputs, isPointerLocked, selectionBoxStart, selection, units } = state
+    const { camera, cursorPosition, damage, grid, inputs, isPointerLocked, selectionBoxStart, selection, units } = state
 
     resizeCanvasToDisplaySize(canvas)
 
@@ -42,8 +42,22 @@ export function draw(ctx, state, desc) {
         ctx.restore()
     })
 
+    // Draw lazors
+    damage.forEach(dmg => {
+        ctx.lineCap = "round"
+        ctx.lineWidth = 0.1
+        ctx.strokeStyle = teamColors[units[dmg.from].client][0]
+        ctx.beginPath()
+        ctx.moveTo(units[dmg.from].drawPos.x, units[dmg.from].drawPos.y)
+        ctx.lineTo(units[dmg.to].drawPos.x, units[dmg.to].drawPos.y)
+        ctx.stroke()
+    })
+
     // Draw health bars
     units.forEach(unit => {
+        const percent = (unit.hp / desc.units[unit.ty].hp)
+        const colors = ['#9c0e0e', '#e33310', '#e38b10', '#e3b910', '#27d939']
+
         ctx.save()
         ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size / 2 - 0.25)
 
@@ -56,10 +70,25 @@ export function draw(ctx, state, desc) {
         ctx.stroke()
 
         ctx.lineWidth = 0.2
-        ctx.strokeStyle = '#00e000'
+        if (percent < 0.1) {
+            ctx.strokeStyle = colors[0]
+        }
+        else if (percent < 0.2) {
+            ctx.strokeStyle = colors[1]
+        }
+        else if (percent < 0.4) {
+            ctx.strokeStyle = colors[2]
+        }
+        else if (percent < 0.7) {
+            ctx.strokeStyle = colors[3]
+        }
+        else {
+            ctx.strokeStyle = colors[4]
+        }
+
         ctx.beginPath()
         ctx.moveTo(-0.5, 0)
-        ctx.lineTo(0.3, 0)
+        ctx.lineTo(percent - 0.5, 0)
         ctx.stroke()
 
         ctx.restore()
