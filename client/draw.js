@@ -1,4 +1,4 @@
-export function draw(ctx, state) {
+export function draw(ctx, state, desc) {
     const canvas = ctx.canvas
     const { camera, cursorPosition, grid, inputs, isPointerLocked, selectionBoxStart, selection, units } = state
 
@@ -39,6 +39,29 @@ export function draw(ctx, state) {
         else if (unit.ty === 1) {
             drawWorker(ctx, teamColors[unit.client])
         }
+        ctx.restore()
+    })
+
+    // Draw health bars
+    units.forEach(unit => {
+        ctx.save()
+        ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size / 2 - 0.25)
+
+        ctx.lineCap = "round"
+        ctx.lineWidth = 0.2
+        ctx.strokeStyle = '#00000080'
+        ctx.beginPath()
+        ctx.moveTo(-0.5, 0)
+        ctx.lineTo(0.5, 0)
+        ctx.stroke()
+
+        ctx.lineWidth = 0.2
+        ctx.strokeStyle = '#00e000'
+        ctx.beginPath()
+        ctx.moveTo(-0.5, 0)
+        ctx.lineTo(0.3, 0)
+        ctx.stroke()
+
         ctx.restore()
     })
 
@@ -92,6 +115,14 @@ function drawCastle(ctx, colors) {
 }
 
 function drawWorker(ctx, colors) {
+    const pts = [
+        { x: -0.2, y: 0.2 },
+        { x: -0.33, y: -0.2 },
+        { x: 0, y: -0.13 },
+        { x: 0.33, y: -0.2 },
+        { x: 0.2, y: 0.2 },
+    ]
+
     ctx.lineJoin = 'round'
 
     ctx.lineWidth = 0.2
@@ -99,11 +130,10 @@ function drawWorker(ctx, colors) {
     ctx.shadowBlur = 10;
     ctx.shadowColor = colors[1]
     ctx.beginPath()
-    ctx.moveTo(-0.3, 0.3)
-    ctx.lineTo(-0.5, -0.3)
-    ctx.lineTo(0, -0.2)
-    ctx.lineTo(0.5, -0.3)
-    ctx.lineTo(0.3, 0.3)
+    ctx.moveTo(pts[0].x, pts[0].y)
+    for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y)
+    }
     ctx.closePath()
     ctx.stroke()
 
@@ -111,11 +141,10 @@ function drawWorker(ctx, colors) {
     ctx.strokeStyle = '#ffffff'
     ctx.shadowColor = "transparent"
     ctx.beginPath()
-    ctx.moveTo(-0.3, 0.3)
-    ctx.lineTo(-0.5, -0.3)
-    ctx.lineTo(0, -0.2)
-    ctx.lineTo(0.5, -0.3)
-    ctx.lineTo(0.3, 0.3)
+    ctx.moveTo(pts[0].x, pts[0].y)
+    for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y)
+    }
     ctx.closePath()
     ctx.stroke()
 }

@@ -5,13 +5,16 @@ const canvas = document.createElement('canvas')
 canvas.style.backgroundColor = '#aaa'
 document.body.appendChild(canvas)
 
+const ctx = canvas.getContext('2d')
+
 async function main() {
     const desc = await (await fetch('desc')).json()
-
     const con = await connect_to_server('room')
 
     let client
     let lastTickTime
+    let lastDrawTime
+
     const state = {
         camera: { x: 0, y: 0 },
         cursorPosition: {},
@@ -46,10 +49,10 @@ async function main() {
         const timeSinceTick = time - lastTickTime
 
         calcDrawPositions(timeSinceTick / (desc.dt * 1000))
+        moveCamera(time - lastDrawTime)
+        draw(ctx, state, desc)
 
-        moveCamera()
-        draw(canvas.getContext('2d'), state)
-
+        lastDrawTime = time
         requestAnimationFrame(gameLoop)
     }
 
@@ -64,20 +67,20 @@ async function main() {
         })
     }
 
-    function moveCamera() {
+    function moveCamera(dt) {
         const pad = 5
-        const panSpeed = 3
+        const panSpeed = 1
         if (state.cursorPosition.x < pad) {
-            state.camera.x += panSpeed
+            state.camera.x += panSpeed * dt
         }
         if (state.cursorPosition.x > canvas.width - pad) {
-            state.camera.x -= panSpeed
+            state.camera.x -= panSpeed * dt
         }
         if (state.cursorPosition.y < pad) {
-            state.camera.y += panSpeed
+            state.camera.y += panSpeed * dt
         }
         if (state.cursorPosition.y > canvas.height - pad) {
-            state.camera.y -= panSpeed
+            state.camera.y -= panSpeed * dt
         }
     }
 
