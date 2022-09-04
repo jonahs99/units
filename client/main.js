@@ -38,7 +38,10 @@ async function main() {
             Update.unit_change.forEach((unit, i) => {
                 state.units[i].pos = unit.pos
                 state.units[i].disp = unit.disp
+                state.units[i].dead = unit.dead
             })
+
+            state.units = state.units.filter(unit => !unit.dead)
         }
     })
 
