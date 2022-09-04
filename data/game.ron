@@ -60,6 +60,8 @@
 				(key: "worker", pos: (x: -12., y: 2.)),
 				(key: "worker", pos: (x: -14., y: 2.)),
 				(key: "worker", pos: (x: -14., y: -2.)),
+				(key: "archer", pos: (x: -12., y: 4.)),
+				(key: "archer", pos: (x: -14., y: 4.)),
 			],
 		),
 		(
@@ -70,6 +72,8 @@
 				(key: "worker", pos: (x: 12., y: 2.)),
 				(key: "worker", pos: (x: 14., y: 2.)),
 				(key: "worker", pos: (x: 14., y: -2.)),
+				(key: "archer", pos: (x: 12., y: -4.)),
+				(key: "archer", pos: (x: 14., y: -4.)),
 			],
 		),
 	],

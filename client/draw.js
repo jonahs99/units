@@ -39,6 +39,9 @@ export function draw(ctx, state) {
         else if (unit.ty === 1) {
             drawWorker(ctx, teamColors[unit.client])
         }
+        else if (unit.ty === 2) {
+            drawArcher(ctx, teamColors[unit.client])
+        }
         ctx.restore()
     })
 
@@ -75,48 +78,59 @@ export function draw(ctx, state) {
 }
 
 function drawCastle(ctx, colors) {
-    ctx.lineWidth = 0.2
-    ctx.strokeStyle = colors[0]
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = colors[1]
     ctx.beginPath()
     ctx.roundRect(-1, -1, 2, 2, 0.2)
-    ctx.stroke()
 
-    ctx.lineWidth = 0.1
-    ctx.strokeStyle = '#ffffff'
-    ctx.shadowColor = "transparent"
-    ctx.beginPath()
-    ctx.roundRect(-1, -1, 2, 2, 0.2)
-    ctx.stroke()
+    glowStroke(ctx, colors)
 }
 
 function drawWorker(ctx, colors) {
+    polygonPath(ctx, [
+        [-0.3, 0.3],
+        [-0.5, -0.3],
+        [0, -0.2],
+        [0.5, -0.3],
+        [0.3, 0.3],
+    ])
+
+    glowStroke(ctx, colors)
+}
+
+function drawArcher(ctx, colors) {
+    polygonPath(ctx, [
+        [0, -0.3],
+        [-0.5, 0.3],
+        [0, 0.2],
+        [0.5, 0.3],
+    ])
+
+    glowStroke(ctx, colors)
+}
+
+function polygonPath(ctx, points) {
+    ctx.beginPath()
+    points.forEach(([x, y], i) => {
+        if (i == 0) {
+            ctx.moveTo(x, y)
+        } else {
+            ctx.lineTo(x, y)
+        }
+    })
+    ctx.closePath()
+}
+
+function glowStroke(ctx, colors) {
     ctx.lineJoin = 'round'
 
     ctx.lineWidth = 0.2
     ctx.strokeStyle = colors[0]
     ctx.shadowBlur = 10;
     ctx.shadowColor = colors[1]
-    ctx.beginPath()
-    ctx.moveTo(-0.3, 0.3)
-    ctx.lineTo(-0.5, -0.3)
-    ctx.lineTo(0, -0.2)
-    ctx.lineTo(0.5, -0.3)
-    ctx.lineTo(0.3, 0.3)
-    ctx.closePath()
     ctx.stroke()
 
     ctx.lineWidth = 0.1
     ctx.strokeStyle = '#ffffff'
     ctx.shadowColor = "transparent"
-    ctx.beginPath()
-    ctx.moveTo(-0.3, 0.3)
-    ctx.lineTo(-0.5, -0.3)
-    ctx.lineTo(0, -0.2)
-    ctx.lineTo(0.5, -0.3)
-    ctx.lineTo(0.3, 0.3)
-    ctx.closePath()
     ctx.stroke()
 }
 
