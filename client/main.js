@@ -6,9 +6,12 @@ canvas.style.backgroundColor = '#aaa'
 document.body.appendChild(canvas)
 
 async function main() {
+    const desc = await (await fetch('desc')).json()
+
     const con = await connect_to_server('room')
 
     let client
+    let lastTickTime
     const state = {
         camera: { x: 0, y: 0 },
         cursorPosition: {},
@@ -26,7 +29,7 @@ async function main() {
             console.log(`We are client: ${Room.client_id} in room "${Room.room}"`)
             client = Room.client_id
         } else if (Update) {
-            //console.log('Last message:\n' + JSON.stringify(Update, null, '  '))
+            lastTickTime = performance.now()
 
             Update.unit_create.forEach(unit => {
                 state.units.push(unit)
@@ -39,26 +42,44 @@ async function main() {
         }
     })
 
-    function gameLoop() {
-        if (state.cursorPosition.x === 0) {
-            state.camera.x += 3
-        }
-        if (state.cursorPosition.x === canvas.width) {
-            state.camera.x -= 3
-        }
-        if (state.cursorPosition.y === 0) {
-            state.camera.y += 3
-        }
-        if (state.cursorPosition.y === canvas.height) {
-            state.camera.y -= 3
-        }
+    function gameLoop(time) {
+        const timeSinceTick = time - lastTickTime
 
+        calcDrawPositions(timeSinceTick / (desc.dt * 1000))
+
+        moveCamera()
         draw(canvas.getContext('2d'), state)
 
         requestAnimationFrame(gameLoop)
     }
 
     requestAnimationFrame(gameLoop)
+
+    function calcDrawPositions(delta) {
+        state.units.forEach(unit => {
+            unit.drawPos = {
+                x: unit.pos.x + unit.disp.x * delta,
+                y: unit.pos.y + unit.disp.y * delta
+            }
+        })
+    }
+
+    function moveCamera() {
+        const pad = 5
+        const panSpeed = 3
+        if (state.cursorPosition.x < pad) {
+            state.camera.x += panSpeed
+        }
+        if (state.cursorPosition.x > canvas.width - pad) {
+            state.camera.x -= panSpeed
+        }
+        if (state.cursorPosition.y < pad) {
+            state.camera.y += panSpeed
+        }
+        if (state.cursorPosition.y > canvas.height - pad) {
+            state.camera.y -= panSpeed
+        }
+    }
 
     canvas.addEventListener('mousemove', (event) => {
         if (state.isPointerLocked) {

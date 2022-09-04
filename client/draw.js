@@ -30,7 +30,7 @@ export function draw(ctx, state) {
     // Draw units
     units.forEach(unit => {
         ctx.save()
-        ctx.translate(unit.pos.x, unit.pos.y)
+        ctx.translate(unit.drawPos.x, unit.drawPos.y)
         ctx.rotate(Math.atan2(unit.disp.y, unit.disp.x) + Math.PI / 2)
 
         if (unit.ty === 0) {
@@ -46,7 +46,7 @@ export function draw(ctx, state) {
     selection.forEach(unit => {
         ctx.fillStyle = '#fff'
         ctx.beginPath()
-        ctx.arc(unit.pos.x, unit.pos.y, 0.075, 0, 2 * Math.PI)
+        ctx.arc(unit.drawPos.x, unit.drawPos.y, 0.075, 0, 2 * Math.PI)
         ctx.fill()
     })
 
