@@ -39,6 +39,9 @@ export function draw(ctx, state, desc) {
         else if (unit.ty === 1) {
             drawWorker(ctx, teamColors[unit.client])
         }
+        else if (unit.ty === 2) {
+            drawArcher(ctx, teamColors[unit.client])
+        }
         ctx.restore()
     })
 
@@ -57,6 +60,10 @@ export function draw(ctx, state, desc) {
     units.forEach(unit => {
         const percent = (unit.hp / desc.units[unit.ty].hp)
         const colors = ['#9c0e0e', '#e33310', '#e38b10', '#e3b910', '#27d939']
+
+        if (percent === 1) {
+            return
+        }
 
         ctx.save()
         ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size / 2 - 0.25)
@@ -127,54 +134,59 @@ export function draw(ctx, state, desc) {
 }
 
 function drawCastle(ctx, colors) {
-    ctx.lineWidth = 0.2
-    ctx.strokeStyle = colors[0]
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = colors[1]
     ctx.beginPath()
     ctx.roundRect(-1, -1, 2, 2, 0.2)
-    ctx.stroke()
 
-    ctx.lineWidth = 0.1
-    ctx.strokeStyle = '#ffffff'
-    ctx.shadowColor = "transparent"
-    ctx.beginPath()
-    ctx.roundRect(-1, -1, 2, 2, 0.2)
-    ctx.stroke()
+    glowStroke(ctx, colors)
 }
 
 function drawWorker(ctx, colors) {
-    const pts = [
-        { x: -0.2, y: 0.2 },
-        { x: -0.33, y: -0.2 },
-        { x: 0, y: -0.13 },
-        { x: 0.33, y: -0.2 },
-        { x: 0.2, y: 0.2 },
-    ]
+    polygonPath(ctx, [
+        [-0.2, 0.2],
+        [-0.3, -0.2],
+        [0, -0.13],
+        [0.3, -0.2],
+        [0.2, 0.2],
+    ])
 
+    glowStroke(ctx, colors)
+}
+
+function drawArcher(ctx, colors) {
+    polygonPath(ctx, [
+        [0, -0.3],
+        [-0.5, 0.3],
+        [0, 0.2],
+        [0.5, 0.3],
+    ])
+
+    glowStroke(ctx, colors)
+}
+
+function polygonPath(ctx, points) {
+    ctx.beginPath()
+    points.forEach(([x, y], i) => {
+        if (i == 0) {
+            ctx.moveTo(x, y)
+        } else {
+            ctx.lineTo(x, y)
+        }
+    })
+    ctx.closePath()
+}
+
+function glowStroke(ctx, colors) {
     ctx.lineJoin = 'round'
 
     ctx.lineWidth = 0.2
     ctx.strokeStyle = colors[0]
     ctx.shadowBlur = 10;
     ctx.shadowColor = colors[1]
-    ctx.beginPath()
-    ctx.moveTo(pts[0].x, pts[0].y)
-    for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y)
-    }
-    ctx.closePath()
     ctx.stroke()
 
     ctx.lineWidth = 0.1
     ctx.strokeStyle = '#ffffff'
     ctx.shadowColor = "transparent"
-    ctx.beginPath()
-    ctx.moveTo(pts[0].x, pts[0].y)
-    for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y)
-    }
-    ctx.closePath()
     ctx.stroke()
 }
 
