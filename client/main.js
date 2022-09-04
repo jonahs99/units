@@ -34,7 +34,7 @@ async function main() {
 
             Update.unit_change.forEach((unit, i) => {
                 state.units[i].pos = unit.pos
-                state.units[i].vel = unit.vel
+                state.units[i].disp = unit.disp
             })
         }
     })

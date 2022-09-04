@@ -14,6 +14,7 @@ struct Unit {
     ty: usize,
     pos: Vec2,
     vel: Vec2,
+    disp: Vec2,
     state: UnitState,
 }
 
@@ -64,7 +65,7 @@ pub struct UnitCreateMsg {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitChangeMsg {
     pos: Vec2,
-    vel: Vec2,
+    disp: Vec2,
 }
 
 impl Game {
@@ -123,6 +124,12 @@ impl Game {
     pub fn tick(&mut self) -> ServerMsg {
         let dt = self.desc.dt;
 
+        // Update the positions based on the displacement from the last tick
+        for unit in &mut self.units {
+            unit.pos += unit.disp;
+        }
+
+        // Compute forces
         for unit in &mut self.units {
             let speed = self.desc.units[unit.ty].speed;
             let acc = self.desc.units[unit.ty].acc;
@@ -172,7 +179,7 @@ impl Game {
         }
 
         for unit in &mut self.units {
-            unit.pos += unit.vel * dt;
+            unit.disp = unit.vel * dt;
         }
 
         ServerMsg::Update(UpdateMsg {
@@ -186,7 +193,7 @@ impl Game {
             .iter()
             .map(|u| UnitChangeMsg {
                 pos: u.pos,
-                vel: u.vel,
+                disp: u.disp,
             })
             .collect()
     }
