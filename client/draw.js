@@ -27,6 +27,16 @@ export function draw(ctx, state, desc) {
         ['#528df2', '#528df2']
     ]
 
+    // Draw selected unit indicators
+    selection.forEach(unit => {
+        ctx.lineWidth = 0.05
+        ctx.strokeStyle = '#ffffffc0'
+        ctx.shadowColor = "transparent"
+        ctx.beginPath()
+        ctx.arc(unit.drawPos.x, unit.drawPos.y, desc.units[unit.ty].size, 0, 2 * Math.PI)
+        ctx.stroke()
+    })
+
     // Draw units
     units.forEach(unit => {
         ctx.save()
@@ -34,7 +44,7 @@ export function draw(ctx, state, desc) {
         ctx.rotate(Math.atan2(unit.disp.y, unit.disp.x) + Math.PI / 2)
 
         if (unit.ty === 0) {
-            drawCastle(ctx, teamColors[unit.client])
+            drawCastle(ctx, teamColors[unit.client], desc.units[0].size)
         }
         else if (unit.ty === 1) {
             drawWorker(ctx, teamColors[unit.client])
@@ -101,14 +111,6 @@ export function draw(ctx, state, desc) {
         ctx.restore()
     })
 
-    // Draw selected unit indicators
-    selection.forEach(unit => {
-        ctx.fillStyle = '#fff'
-        ctx.beginPath()
-        ctx.arc(unit.drawPos.x, unit.drawPos.y, 0.075, 0, 2 * Math.PI)
-        ctx.fill()
-    })
-
     // Draw selection drag-box
     ctx.resetTransform()
     if (inputs.leftMouseButton) {
@@ -133,9 +135,9 @@ export function draw(ctx, state, desc) {
     }
 }
 
-function drawCastle(ctx, colors) {
+function drawCastle(ctx, colors, size) {
     ctx.beginPath()
-    ctx.roundRect(-1, -1, 2, 2, 0.2)
+    ctx.roundRect(-size, -size, size*2, size*2, 0.2)
 
     glowStroke(ctx, colors)
 }
@@ -154,10 +156,10 @@ function drawWorker(ctx, colors) {
 
 function drawArcher(ctx, colors) {
     polygonPath(ctx, [
-        [0, -0.3],
-        [-0.5, 0.3],
+        [0, -0.5],
+        [-0.4, 0.3],
         [0, 0.2],
-        [0.5, 0.3],
+        [0.4, 0.3],
     ])
 
     glowStroke(ctx, colors)
