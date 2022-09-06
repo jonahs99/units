@@ -10,8 +10,8 @@ export function draw(ctx, state, desc) {
     ctx.scale(grid, grid)
 
     // Draw the grid dots
-    for (let x = -20; x < 20; x += 1) {
-        for (let y = -20; y < 20; y += 1) {
+    for (let x = -50; x < 50; x++) {
+        for (let y = -50; y < 50; y++) {
             ctx.fillStyle = '#888'
             if (x == 0 || y == 0) {
                 ctx.fillStyle = '#777'
