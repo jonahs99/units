@@ -1,4 +1,5 @@
 import { draw } from './draw.js'
+import { circleRectIntersects } from './math.js'
 import { connect_to_server } from './server.js'
 
 const canvas = document.createElement('canvas')
@@ -221,9 +222,16 @@ async function main() {
             const y1 = Math.min(start.y, end.y)
             const y2 = Math.max(start.y, end.y)
 
+            const rect = {
+                x: (x1 + x2) / 2,
+                y: (y1 + y2) / 2,
+                width: x2 - x1,
+                height: y2 - y1
+            }
+
             state.selection = []
             state.units.forEach(unit => {
-                if (x1 <= unit.pos.x && unit.pos.x <= x2 && y1 <= unit.pos.y && unit.pos.y <= y2) {
+                if (circleRectIntersects({ x: unit.pos.x, y: unit.pos.y, r: desc.units[unit.ty].size }, rect)) {
                     state.selection.push(unit)
                 }
             })
