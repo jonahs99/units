@@ -1,5 +1,5 @@
 import { draw } from './draw.js'
-import { circleRectIntersects } from './math.js'
+import { averagePoint, circleRectIntersects } from './math.js'
 import { connect_to_server } from './server.js'
 
 const canvas = document.createElement('canvas')
@@ -85,16 +85,16 @@ async function main() {
         const pad = 5
         const panSpeed = 1
         if (state.cursorPosition.x < pad) {
-            state.camera.x += panSpeed * dt
-        }
-        if (state.cursorPosition.x > canvas.width - pad) {
             state.camera.x -= panSpeed * dt
         }
+        if (state.cursorPosition.x > canvas.width - pad) {
+            state.camera.x += panSpeed * dt
+        }
         if (state.cursorPosition.y < pad) {
-            state.camera.y += panSpeed * dt
+            state.camera.y -= panSpeed * dt
         }
         if (state.cursorPosition.y > canvas.height - pad) {
-            state.camera.y -= panSpeed * dt
+            state.camera.y += panSpeed * dt
         }
     }
 
@@ -128,14 +128,27 @@ async function main() {
                 state.selection.forEach(unit => {
                     state.controlGroups[group].push(unit)
                 })
-            } else { // select group
+            } else { // select group or jump camera to group (if double-tapped)
                 if (!state.controlGroups[group].length) {
                     return
                 }
-                state.selection = []
-                state.controlGroups[group].forEach(unit => {
-                    state.selection.push(unit)
-                })
+
+                if (state.inputs.last && state.inputs.last.key === group &&
+                    performance.now() - state.inputs.last.time <= 200) { // double-tapped
+                    const center = averagePoint(state.selection.map(unit => unit.drawPos))
+                    state.camera.x = center.x * state.grid
+                    state.camera.y = center.y * state.grid
+                } else { // select group
+                    state.selection = []
+                    state.controlGroups[group].forEach(unit => {
+                        state.selection.push(unit)
+                    })
+                }
+
+                state.inputs.last = {
+                    key: group,
+                    time: performance.now()
+                }
             }
         } else if ("F0" < event.key && event.key < "F5") {
             const idx = parseInt(event.key.substring(1)) - 1
@@ -253,8 +266,8 @@ async function main() {
 
 function screenToWorld(pos, camera, grid) {
     return {
-        x: (-camera.x + pos.x - canvas.width / 2) / grid,
-        y: (-camera.y + pos.y - canvas.height / 2) / grid
+        x: (camera.x + pos.x - canvas.width / 2) / grid,
+        y: (camera.y + pos.y - canvas.height / 2) / grid
     }
 }
 

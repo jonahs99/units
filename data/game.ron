@@ -10,7 +10,7 @@
 			key: "castle",
 			speed: 0.0,
 			acc: 100.0,
-			size: 1.,
+			size: 1.3,
 			hp: 100.,
 			attack: Some((
 				range: 6.0,
@@ -42,7 +42,7 @@
 			)),
 			speed: 8.0,
 			acc: 100.0,
-			size: 0.6,
+			size: 0.5,
 			hp: 30.,
 			attack: Some((
 				range: 5.,

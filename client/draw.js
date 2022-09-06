@@ -6,7 +6,7 @@ export function draw(ctx, state, desc) {
 
     ctx.resetTransform()
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.translate(camera.x + canvas.width / 2, camera.y + canvas.height / 2)
+    ctx.translate(-camera.x + canvas.width / 2, -camera.y + canvas.height / 2)
     ctx.scale(grid, grid)
 
     // Draw the grid dots
@@ -44,7 +44,8 @@ export function draw(ctx, state, desc) {
         ctx.rotate(Math.atan2(unit.disp.y, unit.disp.x) + Math.PI / 2)
 
         if (unit.ty === 0) {
-            drawCastle(ctx, teamColors[unit.client], desc.units[0].size)
+            const size = desc.units[0].size
+            drawCastle(ctx, teamColors[unit.client], size * 0.8)
         }
         else if (unit.ty === 1) {
             drawWorker(ctx, teamColors[unit.client])
@@ -156,7 +157,7 @@ function drawWorker(ctx, colors) {
 
 function drawArcher(ctx, colors) {
     polygonPath(ctx, [
-        [0, -0.5],
+        [0, -0.4],
         [-0.4, 0.3],
         [0, 0.2],
         [0.4, 0.3],
