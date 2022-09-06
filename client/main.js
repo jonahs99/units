@@ -213,25 +213,24 @@ async function main() {
     canvas.addEventListener('mouseup', (event) => {
         if (event.button === 0) { // left mouse button
             state.inputs.leftMouseButton = false
+            state.selection = []
 
             const start = screenToWorld(state.selectionBoxStart, state.camera, state.grid)
             const end = screenToWorld(state.cursorPosition, state.camera, state.grid)
-
-            const x1 = Math.min(start.x, end.x)
-            const x2 = Math.max(start.x, end.x)
-            const y1 = Math.min(start.y, end.y)
-            const y2 = Math.max(start.y, end.y)
-
             const rect = {
-                x: (x1 + x2) / 2,
-                y: (y1 + y2) / 2,
-                width: x2 - x1,
-                height: y2 - y1
+                x1: Math.min(start.x, end.x),
+                x2: Math.max(start.x, end.x),
+                y1: Math.min(start.y, end.y),
+                y2: Math.max(start.y, end.y)
             }
 
-            state.selection = []
             state.units.forEach(unit => {
-                if (circleRectIntersects({ x: unit.pos.x, y: unit.pos.y, r: desc.units[unit.ty].size }, rect)) {
+                const circle = {
+                    x: unit.pos.x,
+                    y: unit.pos.y,
+                    r: desc.units[unit.ty].size
+                }
+                if (circleRectIntersects(circle, rect)) {
                     state.selection.push(unit)
                 }
             })
