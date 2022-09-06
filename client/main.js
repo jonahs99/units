@@ -17,9 +17,11 @@ async function main() {
 
     const state = {
         camera: { x: 0, y: 0 },
+        cameraGroups: (new Array(4).fill({ x: 0, y: 0, set: false })),
+        controlGroups: (new Array(10)).fill([]),
         cursorPosition: {},
         damage: [],
-        grid: 32,
+        grid: 24,
         inputs: {},
         isPointerLocked: false,
         selectionBoxStart: {},
@@ -37,6 +39,9 @@ async function main() {
 
             state.units = state.units.filter(unit => !unit.dead)
             state.selection = state.selection.filter(unit => !unit.dead)
+            for (let i = 0; i < state.controlGroups.length; i++) {
+                state.controlGroups[i] = state.controlGroups[i].filter(unit => !unit.dead)
+            }
 
             Update.unit_create.forEach(unit => {
                 state.units.push(unit)
@@ -92,6 +97,70 @@ async function main() {
         }
     }
 
+    document.addEventListener('keydown', (event) => {
+        if (event.key === "Control") {
+            state.inputs.ctrl = true
+        } else if (event.key === "Shift") {
+            state.inputs.shift = true
+        } else if (event.key === "Alt" || event.key === "x") {
+            state.inputs.alt = true
+        } else if ("1234567890!@#$%^&*()".includes(event.key)) {
+            const group = "0123456789)!@#$%^&*)".indexOf(event.key) % 10
+            if (state.inputs.alt) { // append & steal to group
+                state.selection.forEach(unit => {
+                    state.controlGroups[group].push(unit)
+                })
+                state.controlGroups[group] = [...new Set(state.controlGroups[group])]
+                for(let i = 0; i < state.controlGroups.length; i++) {
+                    if (i === group) {
+                        continue
+                    }
+                    state.controlGroups[i] = state.controlGroups[i].filter(unit => !state.selection.includes(unit))
+                }
+            } else if (state.inputs.shift) { // append to group
+                state.selection.forEach(unit => {
+                    state.controlGroups[group].push(unit)
+                })
+                state.controlGroups[group] = [...new Set(state.controlGroups[group])]
+            } else if (state.inputs.ctrl) { // create group
+                state.controlGroups[group] = []
+                state.selection.forEach(unit => {
+                    state.controlGroups[group].push(unit)
+                })
+            } else { // select group
+                if (!state.controlGroups[group].length) {
+                    return
+                }
+                state.selection = []
+                state.controlGroups[group].forEach(unit => {
+                    state.selection.push(unit)
+                })
+            }
+        } else if ("F0" < event.key && event.key < "F5") {
+            const idx = parseInt(event.key.substring(1)) - 1
+            if (state.inputs.shift) { // create camera group
+                state.cameraGroups[idx].set = true
+                state.cameraGroups[idx].x = state.camera.x
+                state.cameraGroups[idx].y = state.camera.y
+            } else { // jump camera to location
+                if (state.cameraGroups[idx].set) {
+                    state.camera.x = state.cameraGroups[idx].x
+                    state.camera.y = state.cameraGroups[idx].y
+                }
+            }
+        }
+    })
+
+    document.addEventListener('keyup', (event) => {
+        if (event.key === "Control") {
+            state.inputs.ctrl = false
+        } else if (event.key === "Shift") {
+            state.inputs.shift = false
+        } else if (event.key === "Alt" || event.key === "x") {
+            state.inputs.alt = false
+        } 
+    })
+    
     canvas.addEventListener('mousemove', (event) => {
         if (state.isPointerLocked) {
             if (state.inputs.middleMouseButton) {
