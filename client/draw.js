@@ -1,6 +1,6 @@
 export function draw(ctx, state, desc) {
     const canvas = ctx.canvas
-    const { camera, cursorPosition, damage, grid, inputs, isPointerLocked, selectionBoxStart, selection, units } = state
+    const { camera, cursorPosition, damage, grid, inputs, isPointerLocked, particles, selectionBoxStart, selection, units } = state
 
     resizeCanvasToDisplaySize(canvas)
 
@@ -35,6 +35,24 @@ export function draw(ctx, state, desc) {
         ctx.beginPath()
         ctx.arc(unit.drawPos.x, unit.drawPos.y, desc.units[unit.ty].size, 0, 2 * Math.PI)
         ctx.stroke()
+    })
+
+    // Draw move command indicators
+    particles.forEach(p => {
+        const r = (p.lifeLeft / p.lifeTime) * p.r
+
+        ctx.save()
+        ctx.translate(p.x, p.y)
+
+        ctx.lineWidth = 0.1
+        ctx.strokeStyle = '#00ff00'
+        ctx.shadowColor = '#00000080'
+        ctx.shadowBlur = 10
+        ctx.beginPath()
+        ctx.arc(0, 0, r, 0, 2 * Math.PI)
+        ctx.stroke()
+
+        ctx.restore()
     })
 
     // Draw units
@@ -183,7 +201,7 @@ function glowStroke(ctx, colors) {
 
     ctx.lineWidth = 0.2
     ctx.strokeStyle = colors[0]
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 10
     ctx.shadowColor = colors[1]
     ctx.stroke()
 
