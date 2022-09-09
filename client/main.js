@@ -1,6 +1,7 @@
 import { draw } from './draw.js'
 import { setInputListeners } from './input.js'
 import { connect_to_server } from './server.js'
+import { arrayOfSize } from './util.js'
 
 const canvas = document.createElement('canvas')
 canvas.style.backgroundColor = '#aaa'
@@ -18,8 +19,8 @@ async function main() {
 
     const state = {
         camera: { x: 0, y: 0 },
-        cameraGroups: (new Array(4)).fill(undefined).map(() => {}),
-        controlGroups: (new Array(10)).fill(undefined).map(() => []),
+        cameraGroups: arrayOfSize(4, () => {}),
+        controlGroups: arrayOfSize(10, () => []),
         cursorPosition: {},
         damage: [],
         grid: 24,
