@@ -1,13 +1,14 @@
 export function draw(ctx, state, desc) {
     const canvas = ctx.canvas
-    const { camera, cursorPosition, damage, grid, inputs, isPointerLocked, particles, selectionBoxStart, selection, units } = state
+    const { camera, cursorPosition, damage, inputs, isPointerLocked, particles, selectionBoxStart, selection, units } = state
 
-    resizeCanvasToDisplaySize(canvas)
+    resizeCanvas(canvas)
 
     ctx.resetTransform()
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.translate(-camera.x + canvas.width / 2, -camera.y + canvas.height / 2)
-    ctx.scale(grid, grid)
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.scale(camera.scale, camera.scale)
+    ctx.translate(-camera.translate.x, -camera.translate.y)
 
     // Draw the grid dots
     for (let x = -50; x < 50; x++) {
@@ -211,7 +212,7 @@ function glowStroke(ctx, colors) {
     ctx.stroke()
 }
 
-function resizeCanvasToDisplaySize(canvas, multiplier) {
+function resizeCanvas(canvas, multiplier) {
     multiplier = multiplier || 1;
     const width = canvas.clientWidth * multiplier | 0;
     const height = canvas.clientHeight * multiplier | 0;

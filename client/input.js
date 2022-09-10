@@ -1,4 +1,4 @@
-import { averagePoint, circleRectIntersects } from './math.js'
+import { add, averagePoint, circleRectIntersects, clamp, div, scale, sub } from './math.js'
 
 const NUMBER_CHARS = "1234567890)!@#$%^&*()"
 
@@ -41,8 +41,8 @@ export function setInputListeners(con, state, desc, canvas) {
                 if (state.inputs.last && state.inputs.last.key === group &&
                     performance.now() - state.inputs.last.time <= 200) { // double-tapped
                     const center = averagePoint(state.selection.map(unit => unit.drawPos))
-                    state.camera.x = center.x * state.grid
-                    state.camera.y = center.y * state.grid
+                    state.camera.translate.x = center.x * state.camera.scale
+                    state.camera.translate.y = center.y * state.camera.scale
                 } else { // select group
                     state.selection = []
                     state.controlGroups[group].forEach(unit => {
@@ -59,12 +59,12 @@ export function setInputListeners(con, state, desc, canvas) {
             const idx = parseInt(event.key.substring(1)) - 1
             if (state.inputs.shift) { // create camera group
                 state.cameraGroups[idx].set = true
-                state.cameraGroups[idx].x = state.camera.x
-                state.cameraGroups[idx].y = state.camera.y
+                state.cameraGroups[idx].x = state.camera.translate.x
+                state.cameraGroups[idx].y = state.camera.translate.y
             } else { // jump camera to location
                 if (state.cameraGroups[idx].set) {
-                    state.camera.x = state.cameraGroups[idx].x
-                    state.camera.y = state.cameraGroups[idx].y
+                    state.camera.translate.x = state.cameraGroups[idx].x
+                    state.camera.translate.y = state.cameraGroups[idx].y
                 }
             }
         } else {
@@ -90,8 +90,8 @@ export function setInputListeners(con, state, desc, canvas) {
 
     canvas.addEventListener('mousemove', (event) => {
         if (state.inputs.middleMouseButton) {
-            state.camera.x -= event.movementX
-            state.camera.y -= event.movementY
+            state.camera.translate.x -= event.movementX / state.camera.scale
+            state.camera.translate.y -= event.movementY / state.camera.scale
             return
         }
 
@@ -124,7 +124,7 @@ export function setInputListeners(con, state, desc, canvas) {
             state.inputs.middleMouseButton = true
         }
         else if (event.button === 2) { // right mouse button
-            const target = screenToWorld(state.cursorPosition, state.camera, state.grid, canvas)
+            const target = screenToWorld(state.cursorPosition, state.camera, canvas)
             const cmds = []
             state.selection.forEach((unit) => {
                 cmds.push([ state.units.indexOf(unit), { Target: target } ])
@@ -149,8 +149,8 @@ export function setInputListeners(con, state, desc, canvas) {
             state.inputs.leftMouseButton = false
             state.selection = []
 
-            const start = screenToWorld(state.selectionBoxStart, state.camera, state.grid, canvas)
-            const end = screenToWorld(state.cursorPosition, state.camera, state.grid, canvas)
+            const start = screenToWorld(state.selectionBoxStart, state.camera, canvas)
+            const end = screenToWorld(state.cursorPosition, state.camera, canvas)
             const rect = {
                 x1: Math.min(start.x, end.x),
                 x2: Math.max(start.x, end.x),
@@ -175,7 +175,10 @@ export function setInputListeners(con, state, desc, canvas) {
     })
 
     canvas.addEventListener('wheel', (event) => {
-        state.grid -= event.deltaY * 0.04
+        const scale = clamp(state.camera.scale - (event.deltaY * 0.04), 8, 512) / state.camera.scale
+        const origin_world = screenToWorld(state.cursorPosition, state.camera, canvas)
+        state.camera.translate = add(div(sub(state.camera.translate, origin_world), scale), origin_world)
+        state.camera.scale *= scale
     })
 
     canvas.addEventListener('contextmenu', (event) => { event.preventDefault() })
@@ -185,9 +188,9 @@ export function setInputListeners(con, state, desc, canvas) {
     })
 }
 
-function screenToWorld(pos, camera, grid, canvas) {
+function screenToWorld(pos, camera, canvas) {
     return {
-        x: (camera.x + pos.x - canvas.width / 2) / grid,
-        y: (camera.y + pos.y - canvas.height / 2) / grid
+        x: camera.translate.x + (pos.x - canvas.width / 2) / camera.scale,
+        y: camera.translate.y + (pos.y - canvas.height / 2) / camera.scale
     }
 }
