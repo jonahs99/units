@@ -1,0 +1,17 @@
+# rm -rf /root/units
+# git clone https://github.com/jonahs99/units /root/units
+
+apt update
+apt install build-essential -y
+
+# install rust
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+# install the daemon service
+cp $HOME/units/daemon/units-daemon /usr/sbin/units-daemon
+cp $HOME/units/daemon/units-daemon.service /etc/systemd/system/units-daemon.service
+
+systemctl daemon-reload
+systemctl enable units-daemon
+systemctl restart units-daemon
+
