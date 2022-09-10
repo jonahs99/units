@@ -8,6 +8,20 @@
 	units: [
 		(
 			key: "castle",
+			summons: Some([
+                (
+                    key: "worker",
+                    cost: [(50, "substance")],
+                    time: 1.,
+                    hotkey: "s",
+                ),
+                (
+                    key: "archer",
+                    cost: [(50, "substance")],
+                    time: 3.,
+                    hotkey: "a",
+                ),
+            ]),
 			speed: 0.0,
 			acc: 100.0,
 			size: 1.3,
@@ -20,10 +34,6 @@
 		),
 		(
 			key: "worker",
-			spawn: Some((
-				from: "castle",
-				cost: [(50, "substance")],
-			)),
 			speed: 10.0,
 			acc: 100.0,
 			size: 0.4,

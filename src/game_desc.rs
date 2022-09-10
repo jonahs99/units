@@ -17,7 +17,7 @@ pub struct ResourceDesc {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitDesc {
     pub key: String,
-    pub spawn: Option<SpawnDesc>,
+    pub summons: Option<Vec<SummonDesc>>,
     pub speed: f32,
     pub acc: f32,
     pub size: f32,
@@ -26,9 +26,11 @@ pub struct UnitDesc {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpawnDesc {
-    pub from: String,
+pub struct SummonDesc {
+    pub key: String,
     pub cost: Vec<(i32, String)>,
+    pub time: f32,
+    pub hotkey: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

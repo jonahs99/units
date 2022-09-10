@@ -67,6 +67,14 @@ export function setInputListeners(con, state, desc, canvas) {
                     state.camera.y = state.cameraGroups[idx].y
                 }
             }
+        } else {
+            state.selection.forEach(unit => {
+                const summon = desc.units[unit.ty].summons?.find(summon => summon.hotkey === event.key)
+                if (summon) {
+                    const cmd = [ state.units.indexOf(unit), { Summon: desc.units.findIndex(unit_desc => unit_desc.key === summon.key) } ]
+                    con.send({ Commands: [cmd] })
+                }
+            })
         }
     })
 
@@ -79,7 +87,7 @@ export function setInputListeners(con, state, desc, canvas) {
             state.inputs.alt = false
         } 
     })
-    
+
     canvas.addEventListener('mousemove', (event) => {
         if (state.inputs.middleMouseButton) {
             state.camera.x -= event.movementX
@@ -119,7 +127,7 @@ export function setInputListeners(con, state, desc, canvas) {
             const target = screenToWorld(state.cursorPosition, state.camera, state.grid, canvas)
             const cmds = []
             state.selection.forEach((unit) => {
-                cmds.push({ id: state.units.indexOf(unit), target })
+                cmds.push([ state.units.indexOf(unit), { Target: target } ])
             })
 
             con.send({

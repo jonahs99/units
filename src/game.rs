@@ -18,10 +18,12 @@ struct Unit {
     acc: Vec2,
     disp: Vec2,
     state: UnitState,
+    summon: Option<Summon>,
 
     hp: f32,
     reload: f32,
 
+    new: bool,
     dead: bool,
 }
 
@@ -32,17 +34,23 @@ enum UnitState {
     Move(Vec2),
 }
 
+#[derive(Debug, Default, PartialEq)]
+struct Summon {
+    unit_ty: usize,
+    delay: f32,
+}
+
 // Message Types
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClientMsg {
-    Commands(Vec<UnitCmd>),
+    Commands(Vec<(usize, UnitCmd)>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnitCmd {
-    id: usize,
-    target: Option<Vec2>,
+pub enum UnitCmd {
+    Target(Vec2),
+    Summon(usize),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,17 +117,39 @@ impl Game {
         }
     }
 
+    // fn spawn_unit(&mut self, ty: usize, pos, client)
+    // fn unspawn_unit(&mut self, id: usize)
+
     pub fn process_inputs(&mut self, inputs: &[(usize, ClientMsg)]) {
         for (client, input) in inputs {
             match input {
                 ClientMsg::Commands(cmds) => {
-                    for cmd in cmds {
-                        if let Some(unit) = self.units.get_mut(cmd.id) {
+                    for (id, cmd) in cmds {
+                        if let Some(unit) = self.units.get_mut(*id) {
                             if unit.client != *client {
                                 continue;
                             }
-                            if let Some(target) = cmd.target {
-                                unit.state = UnitState::Move(target);
+                            match cmd {
+                                &UnitCmd::Target(pos) => {
+                                    unit.state = UnitState::Move(pos);
+                                }
+                                &UnitCmd::Summon(summon_ty) => {
+                                    let summon_key = self.desc.units[summon_ty].key.clone();
+                                    let summon_descs = self.desc.units[unit.ty].summons.clone();
+                                    if let Some(summon_descs) = summon_descs {
+                                        let summon_desc = summon_descs
+                                            .iter()
+                                            .find(|summon| summon.key == summon_key);
+                                        if let Some(summon_desc) = summon_desc {
+                                            if unit.summon == None {
+                                                unit.summon = Some(Summon {
+                                                    unit_ty: summon_ty,
+                                                    delay: summon_desc.time,
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -136,7 +166,7 @@ impl Game {
                 client: u.client,
                 ty: u.ty,
             })
-        .collect();
+            .collect();
         ServerMsg::Update(UpdateMsg {
             unit_create,
             unit_change: self.unit_change(),
@@ -158,16 +188,18 @@ impl Game {
         self.unit_forces();
 
         for unit in &mut self.units {
+            unit.new = false;
             match unit.state {
                 UnitState::Move(_target) => {
                     if unit.vel.magnitude() < 1. && unit.acc.magnitude() < 0.5 {
                         unit.state = UnitState::Idle;
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
+        self.unit_summons();
         self.unit_attacks();
 
         for unit in &mut self.units {
@@ -176,10 +208,28 @@ impl Game {
         }
 
         ServerMsg::Update(UpdateMsg {
-            unit_create: vec![],
+            unit_create: self.unit_create(),
             unit_change: self.unit_change(),
             damage: self.damages.clone(),
         })
+    }
+
+    fn unit_create(&mut self) -> Vec<UnitCreateMsg> {
+        let unit_create = self
+            .units
+            .iter()
+            .filter(|u| u.new)
+            .map(|u| UnitCreateMsg {
+                client: u.client,
+                ty: u.ty,
+            })
+            .collect();
+
+        for unit in &mut self.units {
+            unit.new = false;
+        }
+
+        unit_create
     }
 
     fn unit_change(&self) -> Vec<UnitChangeMsg> {
@@ -191,7 +241,7 @@ impl Game {
                 hp: u.hp,
                 dead: u.dead,
             })
-        .collect()
+            .collect()
     }
 
     fn remove_dead_units(&mut self) {
@@ -234,7 +284,9 @@ impl Game {
 
         for i in 0..self.units.len() {
             for j in 0..self.units.len() {
-                if i == j { continue; }
+                if i == j {
+                    continue;
+                }
 
                 let u = &self.units[i];
                 let u_size = self.desc.units[u.ty].size;
@@ -254,6 +306,35 @@ impl Game {
         }
     }
 
+    fn unit_summons(&mut self) {
+        let dt = self.desc.dt;
+
+        let mut units_to_spawn = Vec::new();
+
+        for unit in &mut self.units {
+            if let Some(summon) = &mut unit.summon {
+                summon.delay -= dt;
+                if summon.delay <= 0. {
+                    units_to_spawn.push(Unit {
+                        client: unit.client,
+                        ty: summon.unit_ty,
+                        pos: unit.pos + Vec2::new(0., 2. * self.desc.units[unit.ty].size),
+                        hp: self.desc.units[summon.unit_ty].hp,
+                        new: true,
+                        ..Unit::default()
+                    });
+                    unit.summon = None;
+                }
+            }
+        }
+
+        // ... add units_to_spawn to the self.units
+        // ... AND mark these units as "new", and update self.unit_changes to send the new units
+        for unit in units_to_spawn {
+            self.units.push(unit);
+        }
+    }
+
     fn unit_attacks(&mut self) {
         let dt = self.desc.dt;
 
@@ -267,12 +348,18 @@ impl Game {
 
         for i in 0..self.units.len() {
             for j in 0..self.units.len() {
-                if i == j { continue; }
-                if self.units[i].client == self.units[j].client { continue; }
+                if i == j {
+                    continue;
+                }
+                if self.units[i].client == self.units[j].client {
+                    continue;
+                }
 
                 let attacker = &self.units[i];
                 if let Some(attack) = &self.desc.units[attacker.ty].attack {
-                    if i == j { continue; }
+                    if i == j {
+                        continue;
+                    }
 
                     let defender = &self.units[j];
 
@@ -287,10 +374,7 @@ impl Game {
                             let attacker = &mut self.units[i];
                             attacker.reload = attack.delay;
 
-                            self.damages.push(DamageMsg {
-                                from: i,
-                                to: j,
-                            });
+                            self.damages.push(DamageMsg { from: i, to: j });
                         }
                     }
                 }
