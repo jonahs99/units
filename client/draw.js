@@ -1,4 +1,4 @@
-import { vec } from './math.js'
+import { add, scale, sub, vec } from './math.js'
 
 export function draw(ctx, state, desc) {
     const canvas = ctx.canvas
@@ -21,6 +21,7 @@ export function draw(ctx, state, desc) {
     ctx.fill()
     for (let x = tl.x + 1; x < br.x; x++) {
         for (let y = tl.y + 1; y < br.y; y++) {
+            if (!isOnScreen(vec(x, y), camera, canvas)) { continue }
             ctx.fillStyle = '#787'
             if (x == 0 || y == 0) {
                 ctx.fillStyle = '#565'
@@ -107,12 +108,12 @@ export function draw(ctx, state, desc) {
     })
 
     // Summon bars
-    units.forEach(unit => {
-        ctx.save()
-        ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size)
-        progressBar(ctx, 0.6, '#00000080', '#eee')
-        ctx.restore()
-    })
+    //units.forEach(unit => {
+    //    ctx.save()
+    //    ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size)
+    //    progressBar(ctx, 0.6, '#00000080', '#eee')
+    //    ctx.restore()
+    //})
 
     // Draw selection drag-box
     ctx.resetTransform()
@@ -210,6 +211,19 @@ function progressBar(ctx, percent, bg, fg) {
     ctx.moveTo(-0.5, 0)
     ctx.lineTo(percent - 0.5, 0)
     ctx.stroke()
+}
+
+function isOnScreen(pos, camera, canvas) {
+    const screenPos = worldToScreen(pos, camera, canvas)
+    return (0 < screenPos.x &&
+        screenPos.x < canvas.width &&
+        0 < screenPos.y &&
+        screenPos.y < canvas.height)
+}
+
+function worldToScreen(pos, camera, canvas) {
+    const midScreen = vec(canvas.width / 2, canvas.height / 2)
+    return add(midScreen, scale(sub(pos, camera.translate), camera.scale))
 }
 
 function resizeCanvas(canvas, multiplier) {
