@@ -6,11 +6,14 @@ use serde::{Deserialize, Serialize};
 pub struct Game {
     desc: GameDesc,
     units: Vec<Unit>,
+    next_unit_id: usize,
     damages: Vec<DamageMsg>,
 }
 
 #[derive(Debug, Default)]
 struct Unit {
+    id: usize,
+
     client: usize,
     ty: usize,
     pos: Vec2,
@@ -74,8 +77,9 @@ pub struct UpdateMsg {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitCreateMsg {
-    client: usize,
+    id: usize,
     ty: usize,
+    client: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,31 +98,39 @@ pub struct DamageMsg {
 
 impl Game {
     pub fn new(desc: GameDesc) -> Self {
-        let mut units = Vec::new();
+        let mut game = Self {
+            desc: desc.clone(),
+            units: Vec::new(),
+            next_unit_id: 0,
+            damages: Vec::new(),
+        };
 
         for (client, spawn) in desc.player_spawns.iter().enumerate() {
             for unit in &spawn.units {
                 let ty = desc.units.iter().position(|u| u.key == unit.key).unwrap();
-                let unit_desc = &desc.units[ty];
-                units.push(Unit {
-                    client,
-                    ty,
-                    pos: unit.pos,
-                    hp: unit_desc.hp,
-                    ..Default::default()
-                });
+                game.spawn_unit(ty, client, unit.pos);
             }
         }
 
-        Self {
-            desc,
-            units,
-            damages: vec![],
-        }
+        game
     }
 
-    // fn spawn_unit(&mut self, ty: usize, pos, client)
-    // fn unspawn_unit(&mut self, id: usize)
+    fn spawn_unit(&mut self, ty: usize, player: usize, pos: Vec2) -> usize{
+        let desc = &self.desc.units[ty];
+        let id = self.next_unit_id;
+        let unit = Unit {
+            id,
+            ty,
+            client: player,
+            pos,
+            hp: desc.hp,
+            new: true,
+            ..Unit::default()
+        };
+        self.units.push(unit);
+        self.next_unit_id += 1;
+        id
+    }
 
     pub fn process_inputs(&mut self, inputs: &[(usize, ClientMsg)]) {
         for (client, input) in inputs {
@@ -159,16 +171,8 @@ impl Game {
     }
 
     pub fn catchup_msg(&self) -> ServerMsg {
-        let unit_create = self
-            .units
-            .iter()
-            .map(|u| UnitCreateMsg {
-                client: u.client,
-                ty: u.ty,
-            })
-            .collect();
         ServerMsg::Update(UpdateMsg {
-            unit_create,
+            unit_create: self.unit_create(true),
             unit_change: self.unit_change(),
             damage: vec![],
         })
@@ -208,27 +212,23 @@ impl Game {
         }
 
         ServerMsg::Update(UpdateMsg {
-            unit_create: self.unit_create(),
+            unit_create: self.unit_create(false),
             unit_change: self.unit_change(),
             damage: self.damages.clone(),
         })
     }
 
-    fn unit_create(&mut self) -> Vec<UnitCreateMsg> {
+    fn unit_create(&self, all_units: bool) -> Vec<UnitCreateMsg> {
         let unit_create = self
             .units
             .iter()
-            .filter(|u| u.new)
+            .filter(|u| all_units || u.new)
             .map(|u| UnitCreateMsg {
-                client: u.client,
+                id: u.id,
                 ty: u.ty,
+                client: u.client,
             })
             .collect();
-
-        for unit in &mut self.units {
-            unit.new = false;
-        }
-
         unit_create
     }
 
@@ -245,7 +245,10 @@ impl Game {
     }
 
     fn remove_dead_units(&mut self) {
-        self.units.retain(|unit| !unit.dead);
+        self.units.retain(|u| !u.dead);
+        for unit in &mut self.units {
+            unit.new = false;
+        }
     }
 
     fn unit_forces(&mut self) {
@@ -315,23 +318,15 @@ impl Game {
             if let Some(summon) = &mut unit.summon {
                 summon.delay -= dt;
                 if summon.delay <= 0. {
-                    units_to_spawn.push(Unit {
-                        client: unit.client,
-                        ty: summon.unit_ty,
-                        pos: unit.pos + Vec2::new(0., 2. * self.desc.units[unit.ty].size),
-                        hp: self.desc.units[summon.unit_ty].hp,
-                        new: true,
-                        ..Unit::default()
-                    });
+                    let pos = unit.pos + Vec2::new(0., 2. * self.desc.units[unit.ty].size);
+                    units_to_spawn.push((unit.ty, unit.client, pos));
                     unit.summon = None;
                 }
             }
         }
 
-        // ... add units_to_spawn to the self.units
-        // ... AND mark these units as "new", and update self.unit_changes to send the new units
-        for unit in units_to_spawn {
-            self.units.push(unit);
+        for (ty, player, pos) in units_to_spawn {
+            self.spawn_unit(ty, player, pos);
         }
     }
 
