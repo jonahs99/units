@@ -319,7 +319,7 @@ impl Game {
                 summon.delay -= dt;
                 if summon.delay <= 0. {
                     let pos = unit.pos + Vec2::new(0., 2. * self.desc.units[unit.ty].size);
-                    units_to_spawn.push((unit.ty, unit.client, pos));
+                    units_to_spawn.push((summon.unit_ty, unit.client, pos));
                     unit.summon = None;
                 }
             }
