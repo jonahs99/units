@@ -13,4 +13,5 @@ ron = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 vek = "*"
+rand = "*"
 

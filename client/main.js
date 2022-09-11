@@ -76,6 +76,9 @@ async function main() {
 
 
     function calcDrawPositions(delta) {
+        if (delta > 1) {
+            delta = 2 - Math.exp(-delta + 1)
+        }
         state.units.forEach(unit => {
             unit.drawPos = add(unit.pos, scale(unit.disp, delta))
         })

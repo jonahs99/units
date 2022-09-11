@@ -1,6 +1,7 @@
 use crate::game_desc::GameDesc;
 use crate::math::{truncate, Vec2};
 use serde::{Deserialize, Serialize};
+use rand::Rng;
 
 #[derive(Debug)]
 pub struct Game {
@@ -19,6 +20,7 @@ struct Unit {
     pos: Vec2,
     vel: Vec2,
     acc: Vec2,
+    last_acc: Vec2,
     disp: Vec2,
     state: UnitState,
     summon: Option<Summon>,
@@ -186,6 +188,7 @@ impl Game {
         // Update the positions based on the displacement from the last tick
         for unit in &mut self.units {
             unit.pos += unit.disp;
+            unit.last_acc = unit.acc;
         }
 
         // Compute forces
@@ -207,8 +210,8 @@ impl Game {
         self.unit_attacks();
 
         for unit in &mut self.units {
-            unit.vel += unit.acc * dt;
-            unit.disp = unit.vel * dt;
+            unit.disp = unit.vel * dt + 0.5 * unit.acc * dt*dt;
+            unit.vel += 0.5 * (unit.acc + unit.last_acc) * dt;
         }
 
         ServerMsg::Update(UpdateMsg {
@@ -255,6 +258,7 @@ impl Game {
         let dt = self.desc.dt;
 
         for unit in &mut self.units {
+            unit.last_acc = unit.acc;
             unit.acc = Vec2::zero();
         }
 
@@ -326,7 +330,9 @@ impl Game {
         }
 
         for (ty, player, pos) in units_to_spawn {
-            self.spawn_unit(ty, player, pos);
+            let id = self.spawn_unit(ty, player, pos);
+            let rnd: f32 = rand::thread_rng().gen();
+            self.units[id].state = UnitState::Move(pos + Vec2::new(rnd - 0.5, 2.));
         }
     }
 
