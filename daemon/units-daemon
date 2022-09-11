@@ -1,0 +1,21 @@
+#!/bin/bash
+
+HOME=/root
+source $HOME/.cargo/env
+
+cd $HOME/units
+
+while true; do
+    git pull
+
+    new_hash=`git rev-parse HEAD`
+    if [ "$new_hash" != "$last_hash" ]
+    then
+        last_hash=$new_hash
+	killall units-server
+        cargo run --release &
+    fi
+    
+    sleep 30
+done
+

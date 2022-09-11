@@ -18,12 +18,14 @@ async function main() {
     let lastDrawTime
 
     const state = {
-        camera: { x: 0, y: 0 },
+        camera: {
+            translate: { x: 0, y: 0 },
+            scale: 24
+        },
         cameraGroups: arrayOfSize(4, () => {}),
         controlGroups: arrayOfSize(10, () => []),
         cursorPosition: {},
         damage: [],
-        grid: 24,
         inputs: {},
         isPointerLocked: false,
         particles: [],
@@ -86,16 +88,16 @@ async function main() {
         const pad = 5
         const panSpeed = 1
         if (state.cursorPosition.x < pad) {
-            state.camera.x -= panSpeed * dt
+            state.camera.translate.x -= panSpeed * dt / state.camera.scale
         }
         if (state.cursorPosition.x > canvas.width - pad) {
-            state.camera.x += panSpeed * dt
+            state.camera.translate.x += panSpeed * dt / state.camera.scale
         }
         if (state.cursorPosition.y < pad) {
-            state.camera.y -= panSpeed * dt
+            state.camera.translate.y -= panSpeed * dt / state.camera.scale
         }
         if (state.cursorPosition.y > canvas.height - pad) {
-            state.camera.y += panSpeed * dt
+            state.camera.translate.y += panSpeed * dt / state.camera.scale
         }
     }
 
