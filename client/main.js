@@ -1,35 +1,36 @@
 import { draw } from './draw.js'
 import { setInputListeners } from './input.js'
+import { add, scale, vec } from './math.js'
 import { connect_to_server } from './server.js'
 import { arrayOfSize } from './util.js'
 
 const canvas = document.createElement('canvas')
-canvas.style.backgroundColor = '#aaa'
-document.body.appendChild(canvas)
-
 const ctx = canvas.getContext('2d')
+document.body.appendChild(canvas)
 
 async function main() {
     const desc = await (await fetch('desc')).json()
     const con = await connect_to_server('room')
 
     let client
-    let lastTickTime
-    let lastDrawTime
+    let lastTickTime = performance.now()
+    let lastDrawTime = performance.now()
 
     const state = {
         camera: {
-            translate: { x: 0, y: 0 },
+            translate: vec(0, 0),
             scale: 24
         },
-        cameraGroups: arrayOfSize(4, () => {}),
+        cameraGroups: arrayOfSize(4, () => ({})),
         controlGroups: arrayOfSize(10, () => []),
-        cursorPosition: {},
+        cursor: {
+            pos: vec(10, 10),
+            dragFrom: vec(0, 0)
+        },
         damage: [],
         inputs: {},
         isPointerLocked: false,
         particles: [],
-        selectionBoxStart: {},
         selection: [],
         units: []
     }
@@ -61,7 +62,7 @@ async function main() {
         }
     })
 
-    function gameLoop(time) {
+    function drawLoop(time) {
         const timeSinceTick = time - lastTickTime
 
         calcDrawPositions(timeSinceTick / (desc.dt * 1000))
@@ -70,33 +71,29 @@ async function main() {
         draw(ctx, state, desc)
 
         lastDrawTime = time
-        requestAnimationFrame(gameLoop)
+        requestAnimationFrame(drawLoop)
     }
 
-    requestAnimationFrame(gameLoop)
 
     function calcDrawPositions(delta) {
         state.units.forEach(unit => {
-            unit.drawPos = {
-                x: unit.pos.x + unit.disp.x * delta,
-                y: unit.pos.y + unit.disp.y * delta
-            }
+            unit.drawPos = add(unit.pos, scale(unit.disp, delta))
         })
     }
 
     function moveCamera(dt) {
         const pad = 5
         const panSpeed = 1
-        if (state.cursorPosition.x < pad) {
+        if (state.cursor.pos.x < pad) {
             state.camera.translate.x -= panSpeed * dt / state.camera.scale
         }
-        if (state.cursorPosition.x > canvas.width - pad) {
+        if (state.cursor.pos.x > canvas.width - pad) {
             state.camera.translate.x += panSpeed * dt / state.camera.scale
         }
-        if (state.cursorPosition.y < pad) {
+        if (state.cursor.pos.y < pad) {
             state.camera.translate.y -= panSpeed * dt / state.camera.scale
         }
-        if (state.cursorPosition.y > canvas.height - pad) {
+        if (state.cursor.pos.y > canvas.height - pad) {
             state.camera.translate.y += panSpeed * dt / state.camera.scale
         }
     }
@@ -107,6 +104,7 @@ async function main() {
     }
 
     setInputListeners(con, state, desc, canvas)
+    requestAnimationFrame(drawLoop)
 }
 
 main()
