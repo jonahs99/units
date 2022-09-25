@@ -1,6 +1,6 @@
 import { draw } from './draw.js'
 import { addEventListeners } from './input.js'
-import { add, scale, vec, zero } from './math.js'
+import { add, scale, vec } from './math.js'
 import { connect_to_server } from './server.js'
 import { arrayOfSize } from './util.js'
 
@@ -15,10 +15,10 @@ let lastTickTime = performance.now()
 let lastDrawTime = performance.now()
 
 const state = {
-    camera: { translate: zero(), scale: 24 },
+    camera: { translate: vec(0, 0), scale: 24 },
     cameraGroups: arrayOfSize(4, () => ({})),
     controlGroups: arrayOfSize(10, () => []),
-    cursor: { pos: vec(10, 10), dragFrom: zero() },
+    cursor: { pos: vec(10, 10), dragFrom: vec(0, 0) },
     damage: [],
     inputs: {},
     isPointerLocked: false,
@@ -38,7 +38,7 @@ con.on((msg) => {
         state.selection = state.selection.filter(unit => !unit.dead)
         state.controlGroups.forEach(cg => cg.filter(unit => !unit.dead))
         Update.unit_create.forEach(unit => { state.units.push(unit) })
-        Update.unit_change.forEach((unit, i) => { ...unit })
+        Update.unit_change.forEach((unit, i) => { Object.assign(state.units[i], unit) })
         state.damage = Update.damage
     }
 })

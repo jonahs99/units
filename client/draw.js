@@ -111,12 +111,14 @@ export function draw(ctx, state, desc) {
     })
 
     // Summon bars
+    /*
     units.forEach(unit => {
         ctx.save()
         ctx.translate(unit.drawPos.x, unit.drawPos.y - desc.units[unit.ty].size)
         progressBar(ctx, unit.build_percent, '#00000080', '#eee')
         ctx.restore()
     })
+    */
 
     // Draw selection drag-box
     ctx.resetTransform()

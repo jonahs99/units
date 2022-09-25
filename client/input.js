@@ -4,17 +4,17 @@ const NUMBER_CHARS = "1234567890!@#$%^&*()"
 const FN_KEYS = [ "F1", "F2", "F3", "F4" ]
 
 export function addEventListeners(con, state, desc, canvas) {
-    document.addEventListener('keydown', _onkeydown(event, state))
-    document.addEventListener('keyup', _onkeyup(event, state))
-    document.addEventListener('pointerlockchange', _onpointerlockchange(state, canvas))
-    canvas.addEventListener('mousemove', _onmousemove(event, state, canvas))
-    canvas.addEventListener('mousedown', _onmousedown(event, state, canvas))
-    canvas.addEventListener('mouseup', _onmouseup(event, state, canvas))
-    canvas.addEventListener('wheel', _onwheel(event, state, canavs))
+    document.addEventListener('keydown', (event) => _onkeydown(event, state, con, desc))
+    document.addEventListener('keyup', (event) => _onkeyup(event, state))
+    document.addEventListener('pointerlockchange', () => _onpointerlockchange(state, canvas))
+    canvas.addEventListener('mousemove', (event) => _onmousemove(event, state, canvas))
+    canvas.addEventListener('mousedown', (event) => _onmousedown(event, state, canvas, con))
+    canvas.addEventListener('mouseup', (event) => _onmouseup(event, state, canvas, desc))
+    canvas.addEventListener('wheel', (event) => _onwheel(event, state, canvas))
     canvas.addEventListener('contextmenu', (event) => { event.preventDefault() })
 }
 
-function _onkeydown(event, state) {
+function _onkeydown(event, state, con, desc) {
     if (event.key === "Control") {
         state.inputs.ctrl = true
     } else if (event.key === "Shift") {
@@ -88,7 +88,7 @@ function _onkeyup(event, state) {
     } 
 }
 
-function _onmousemove(event, state, canavs) {
+function _onmousemove(event, state, canvas) {
     if (state.inputs.middleMouseButton) {
         state.camera.translate = sub(state.camera.translate, div(vec(event.movementX, event.movementY), state.camera.scale))
         return
@@ -103,7 +103,7 @@ function _onmousemove(event, state, canavs) {
 }
 
 
-function _onmousedown(event, state, canvas) {
+function _onmousedown(event, state, canvas, con) {
     if (!state.isPointerLocked && !localStorage.getItem('nopointerlock')) {
         canvas.requestPointerLock()
         state.cursor.pos = vec(event.clientX, event.clientY)
@@ -138,7 +138,7 @@ function _onmousedown(event, state, canvas) {
     }
 }
 
-function _onmouseup(event, state, canvas) {
+function _onmouseup(event, state, canvas, desc) {
     // Left mouse button up
     if (event.button === 0) {
         state.inputs.leftMouseButton = false
